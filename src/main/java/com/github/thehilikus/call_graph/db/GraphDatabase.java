@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
+
 /**
  * Database abstraction
  */
@@ -39,13 +40,15 @@ public class GraphDatabase {
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
     }
 
-
     public void shutdown() {
         if (managementService != null) {
             LOG.info("Shutting down Neo4j database '{}'", databaseName);
             managementService.shutdown();
-        } else {
-            LOG.warn("Neo4j database '{}' not initialized", databaseName);
+            managementService = null;
         }
+    }
+
+    public GraphTransaction startTransaction() {
+        return new GraphTransaction(databaseService.beginTx());
     }
 }
