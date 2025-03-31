@@ -54,6 +54,7 @@ public class JarAnalyzer {
                     }
                 }
             }
+            LOG.debug("Done processing jar. {} nodes in graph", tx.getNodeCount());
             if (!dryRun) {
                 tx.commit();
             } else {
