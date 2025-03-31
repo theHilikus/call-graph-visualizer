@@ -3,26 +3,40 @@ package com.github.thehilikus.call_graph.jar;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
 import org.neo4j.graphdb.Node;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.MethodNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 /**
  * POJO to navigate method relationships
  */
 public class MethodAnalyzer extends MethodVisitor {
+    private static final Logger LOG = LoggerFactory.getLogger(MethodAnalyzer.class);
     private static final String CONSTRUCTOR_NAME = "<init>";
     private static final String CALLS = "Calls";
     private final String className;
     private final GraphTransaction activeTransaction;
     private final String description;
     private final String methodName;
+    private final int accessFlags;
     private Node currentNode;
+
+    private static final String METHOD_LABEL = "Method";
+    private static final String FQN = "fullQualifiedClassName";
+    private static final String SIMPLE_NAME = "simpleClassName";
+    private static final String SIGNATURE = "signature";
+    private static final String STATIC = "static";
 
     protected MethodAnalyzer(int api, MethodVisitor methodVisitor, String className, MethodNode methodNode, GraphTransaction tx) {
         super(api, methodVisitor);
         this.className = className;
         this.methodName = methodNode.name;
         this.description = methodNode.desc;
+        this.accessFlags = methodNode.access;
         this.activeTransaction = tx;
     }
 
@@ -32,7 +46,7 @@ public class MethodAnalyzer extends MethodVisitor {
     @Override
     public void visitCode() {
         String signature = cleanMethodName(className, methodName) + buildArgumentsList();
-        currentNode = addOrGetNode(className, signature);
+        currentNode = createOrGetExistingMethodNode(className, signature, accessFlags);
 
         super.visitCode();
     }
@@ -41,24 +55,34 @@ public class MethodAnalyzer extends MethodVisitor {
      * Called for every call of the current method
      */
     @Override
-    public void visitMethodInsn(int opcode, String targetClassRaw, String targetMethodNameRaw, String descriptor, boolean isInterface) {
+    public void visitMethodInsn(int targetAccessFlags, String targetClassRaw, String targetMethodNameRaw, String descriptor, boolean isInterface) {
         if (currentNode == null) {
             throw new JarAnalysisException("Unknown current method with target method" + targetClassRaw + "#" + targetMethodNameRaw);
         }
         String targetClass = targetClassRaw.replace("/", ".");
         String targetMethod = cleanMethodName(targetClass, targetMethodNameRaw) + buildArgumentsList();
-        Node targetNode = addOrGetNode(targetClass, targetMethod);
+        Node targetNode = createOrGetExistingMethodNode(targetClass, targetMethod, targetAccessFlags);
+        LOG.trace("Creating relationship '{}' between {}#{} and {}#{}", CALLS, currentNode.getProperty(SIMPLE_NAME), currentNode.getProperty(SIGNATURE), targetNode.getProperty(SIMPLE_NAME), targetNode.getProperty(SIGNATURE));
         activeTransaction.addRelationship(CALLS, currentNode, targetNode);
 
-        super.visitMethodInsn(opcode, targetClassRaw, targetMethodNameRaw, descriptor, isInterface);
+        super.visitMethodInsn(targetAccessFlags, targetClassRaw, targetMethodNameRaw, descriptor, isInterface);
     }
 
-    private Node addOrGetNode(String targetClass, String targetMethod) {
+    private Node createOrGetExistingMethodNode(String nodeClass, String methodSignature, int accessFlags) {
         Node result;
-        if (!activeTransaction.containsMethodNode(targetClass, targetMethod)) {
-            result = activeTransaction.addMethodNode(targetClass, targetMethod, false); //TODO: fix isStatic
+        String nodeId = nodeClass + "#" + methodSignature;
+        if (!activeTransaction.containsNode(nodeId)) {
+            boolean isStatic = (accessFlags & Opcodes.ACC_STATIC) != 0;
+            Map<String, Object> properties = Map.of(
+                    FQN, nodeClass,
+                    SIMPLE_NAME, nodeClass.substring(nodeClass.lastIndexOf('.') + 1),
+                    SIGNATURE, methodSignature,
+                    STATIC, isStatic
+            );
+            LOG.trace("Creating node for method {}#{}", nodeClass, methodSignature);
+            result = activeTransaction.addNode(nodeId, METHOD_LABEL, properties);
         } else {
-            result = activeTransaction.getMethodNode(targetClass, targetMethod);
+            result = activeTransaction.getNode(nodeId);
         }
         return result;
     }

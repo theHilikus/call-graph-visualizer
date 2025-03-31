@@ -12,11 +12,6 @@ import java.util.Map;
  */
 public class GraphTransaction implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(GraphTransaction.class);
-    private static final String METHOD_LABEL = "Method";
-    private static final String FQN = "fullQualifiedClassName";
-    private static final String SIMPLE_NAME = "simpleClassName";
-    private static final String SIGNATURE = "signature";
-    private static final String STATIC = "static";
     private final Transaction neoTx;
     private final Map<String, Node> newNodes = new HashMap<>();
 
@@ -25,17 +20,11 @@ public class GraphTransaction implements AutoCloseable {
         this.neoTx = transaction;
     }
 
-    public Node addMethodNode(String className, String methodSignature, boolean isStatic) {
+    public Node addNode(String id, String label, Map<String, Object> properties) {
         throwIfNoTransaction();
-        LOG.trace("Creating node for method {}#{}", className, methodSignature);
-
-        Node node = neoTx.createNode(Label.label(METHOD_LABEL));
-        node.setProperty(FQN, className);
-        node.setProperty(SIMPLE_NAME, className.substring(className.lastIndexOf(".") + 1));
-        node.setProperty(SIGNATURE, methodSignature);
-        node.setProperty(STATIC, isStatic);
-        newNodes.put(className + "#" + methodSignature, node);
-
+        Node node = neoTx.createNode(Label.label(label));
+        properties.forEach(node::setProperty);
+        newNodes.put(id, node);
         return node;
     }
 
@@ -45,13 +34,13 @@ public class GraphTransaction implements AutoCloseable {
         }
     }
 
-    public boolean containsMethodNode(String className, String methodSignature) {
-        return newNodes.containsKey(className + "#" + methodSignature);
+    public boolean containsNode(String nodeId) {
+        return newNodes.containsKey(nodeId);
     }
 
 
-    public Node getMethodNode(String className, String methodSignature) {
-        return newNodes.get(className + "#" + methodSignature);
+    public Node getNode(String nodeId) {
+        return newNodes.get(nodeId);
     }
 
     public void commit() {
@@ -70,7 +59,6 @@ public class GraphTransaction implements AutoCloseable {
 
     public void addRelationship(String relationshipName, Node currentNode, Node targetNode) {
         throwIfNoTransaction();
-        LOG.trace("Creating relationship {} between {}#{} and {}#{}", relationshipName, currentNode.getProperty(SIMPLE_NAME), currentNode.getProperty(SIGNATURE), targetNode.getProperty(SIMPLE_NAME), targetNode.getProperty(SIGNATURE));
         currentNode.createRelationshipTo(targetNode, RelationshipType.withName(relationshipName));
     }
 
