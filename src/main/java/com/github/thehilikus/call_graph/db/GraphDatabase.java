@@ -2,12 +2,16 @@ package com.github.thehilikus.call_graph.db;
 
 import org.apache.commons.lang3.time.StopWatch;
 import org.neo4j.configuration.GraphDatabaseSettings;
+import org.neo4j.configuration.connectors.BoltConnector;
+import org.neo4j.configuration.helpers.SocketAddress;
 import org.neo4j.dbms.api.DatabaseManagementService;
 import org.neo4j.dbms.api.DatabaseManagementServiceBuilder;
+import org.neo4j.dbms.api.Neo4jDatabaseManagementServiceBuilder;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
@@ -29,10 +33,19 @@ public class GraphDatabase {
     }
 
     public void initialize() {
+        initialize(null);
+    }
+
+    public void initialize(@Nullable Integer boltPort) {
         LOG.info("Initializing Neo4j database '{}' at {}", databaseName, directory);
         StopWatch stopWatch = StopWatch.createStarted();
-        managementService = new DatabaseManagementServiceBuilder(directory.resolve(databaseName)).build();
-        databaseService = managementService.database(GraphDatabaseSettings.DEFAULT_DATABASE_NAME);
+        Neo4jDatabaseManagementServiceBuilder serviceBuilder = new DatabaseManagementServiceBuilder(directory.resolve(databaseName));
+        if (boltPort != null) {
+            serviceBuilder.setConfig(BoltConnector.enabled, true);
+            serviceBuilder.setConfig(BoltConnector.listen_address, new SocketAddress("localhost", boltPort));
+        }
+        managementService = serviceBuilder.build();
+
         if (LOG.isDebugEnabled()) {
             LOG.debug("Neo4j database '{}' initialized in {} ms", databaseName, stopWatch.getTime(TimeUnit.MILLISECONDS));
         }
@@ -49,6 +62,9 @@ public class GraphDatabase {
     }
 
     public GraphTransaction startTransaction() {
+        if (databaseService == null) {
+            databaseService = managementService.database(GraphDatabaseSettings.DEFAULT_DATABASE_NAME);
+        }
         return new GraphTransaction(databaseService.beginTx());
     }
 }
