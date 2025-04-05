@@ -1,5 +1,9 @@
 package com.github.thehilikus.call_graph.jar;
 
+import com.github.thehilikus.call_graph.db.GraphConstants;
+import com.github.thehilikus.call_graph.db.GraphConstants.Classes;
+import com.github.thehilikus.call_graph.db.GraphConstants.Methods;
+import com.github.thehilikus.call_graph.db.GraphConstants.Relations;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
 import org.neo4j.graphdb.Node;
 import org.objectweb.asm.MethodVisitor;
@@ -17,7 +21,6 @@ import java.util.Map;
 public class MethodAnalyzer extends MethodVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(MethodAnalyzer.class);
     private static final String CONSTRUCTOR_NAME = "<init>";
-    private static final String CALLS = "Calls";
     private final String className;
     private final GraphTransaction activeTransaction;
     private final String description;
@@ -25,13 +28,7 @@ public class MethodAnalyzer extends MethodVisitor {
     private final int accessFlags;
     private Node currentNode;
 
-    private static final String METHOD_LABEL = "Method";
-    private static final String FQN = "fullQualifiedClassName";
-    private static final String SIMPLE_NAME = "simpleClassName";
-    private static final String SIGNATURE = "signature";
-    private static final String STATIC = "static";
-
-    protected MethodAnalyzer(int api, MethodVisitor methodVisitor, String className, MethodNode methodNode, GraphTransaction tx) {
+    protected MethodAnalyzer(int api, MethodVisitor methodVisitor, Node classNode, MethodNode methodNode, GraphTransaction tx) {
         super(api, methodVisitor);
         this.className = className;
         this.methodName = methodNode.name;
