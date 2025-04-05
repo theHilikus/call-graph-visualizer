@@ -20,25 +20,35 @@ import java.util.Map;
 public class ClassAnalyzer extends ClassVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(ClassAnalyzer.class);
     private final String className;
+    private final Node jarNode;
     private final GraphTransaction activeTransaction;
     private Node currentNode;
 
 
-    protected ClassAnalyzer(String className, GraphTransaction tx) {
+    protected ClassAnalyzer(String className, Node jarNode, GraphTransaction tx) {
         super(Opcodes.ASM9);
         this.className = className;
+        this.jarNode = jarNode;
         this.activeTransaction = tx;
     }
 
     @Override
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+        currentNode = createClassNode();
+
+        LOG.trace("Creating relationship '{}' between {} and {}", GraphConstants.Relations.ARCHIVES, jarNode.getProperty(GraphConstants.ID), currentNode.getProperty(GraphConstants.ID));
+        activeTransaction.addRelationship(GraphConstants.Relations.ARCHIVES, jarNode, currentNode);
+
+        super.visit(version, access, name, signature, superName, interfaces);
+    }
+
+    private Node createClassNode() {
         Map<String, Object> properties = Map.of(
                 GraphConstants.ID, className,
                 Classes.SIMPLE_NAME, className.substring(className.lastIndexOf('.') + 1)
         );
         LOG.debug("Creating node for class {}", className);
-        currentNode = activeTransaction.addNode(className, Classes.CLASS_LABEL, properties);
-        super.visit(version, access, name, signature, superName, interfaces);
+        return activeTransaction.addNode(className, Classes.CLASS_LABEL, properties);
     }
 
     @Override

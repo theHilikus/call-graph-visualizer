@@ -26,5 +26,6 @@ public class GraphConstants {
     public static class Relations {
         public static final String CALLS = "Calls";
         public static final String CONTAINS = "Contains";
+        public static final String ARCHIVES = "Archives";
     }
 }

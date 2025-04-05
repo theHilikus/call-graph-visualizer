@@ -51,7 +51,7 @@ public class JarAnalyzer {
                     try (InputStream inputStream = jarFile.getInputStream(entry)) {
                         ClassReader classReader = new ClassReader(inputStream);
                         String className = entry.getName().replace("/", ".").substring(0, entry.getName().length() - 6);
-                        ClassAnalyzer classAnalyzer = new ClassAnalyzer(className, tx);
+                        ClassAnalyzer classAnalyzer = new ClassAnalyzer(className, currentNode, tx);
                         classReader.accept(classAnalyzer, 0);
                     } catch (IOException e) {
                         System.err.println("Error reading class file: " + entry.getName() + " - " + e.getMessage());
