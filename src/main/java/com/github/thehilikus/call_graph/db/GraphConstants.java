@@ -7,6 +7,10 @@ package com.github.thehilikus.call_graph.db;
 public class GraphConstants {
     public static final String ID = "id";
 
+    public static class Jars {
+        public static final String JAR_LABEL = "Jar";
+    }
+
     public static class Classes {
         public static final String CLASS_LABEL = "Class";
         public static final String SIMPLE_NAME = "simpleClassName";
