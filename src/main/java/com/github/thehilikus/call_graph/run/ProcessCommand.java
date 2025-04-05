@@ -4,6 +4,7 @@ import com.github.thehilikus.call_graph.db.GraphDatabase;
 import com.github.thehilikus.call_graph.jar.JarAnalyzer;
 import org.apache.commons.lang3.time.StopWatch;
 import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +19,12 @@ public class ProcessCommand implements Command {
     @Argument(required = true, metaVar = "jar", usage = "the jar to process")
     private Path jarPath;
 
+    @Option(name = "--dry-run", usage = "Don't write to the database")
+    private boolean dryRun = false;
+
+    @Option(name="--truncate", usage = "Deletes the existing database before creating a new one")
+    private boolean truncate = false;
+
     @Override
     public void execute(CliOptions globalOptions) {
         GraphDatabase db = new GraphDatabase(globalOptions.databaseFolder, globalOptions.databaseName);
@@ -26,7 +33,7 @@ public class ProcessCommand implements Command {
         db.initialize();
         StopWatch stopWatch = StopWatch.createStarted();
         LOG.info("Start processing jar {}", jarPath);
-        jarAnalyzer.process(db, globalOptions.dryRun);
+        jarAnalyzer.process(db, dryRun);
         LOG.info("Done processing jar in {} ms", stopWatch.getTime(TimeUnit.MILLISECONDS));
         db.shutdown();
     }

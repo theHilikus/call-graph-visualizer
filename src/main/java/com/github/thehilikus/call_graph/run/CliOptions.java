@@ -25,9 +25,6 @@ public class CliOptions {
     @Option(name = "--db-name", usage = "the database name", metaVar = "NAME")
     String databaseName = "call-graphs";
 
-    @Option(name = "--dry-run", usage = "Don't write to the database")
-    boolean dryRun = false;
-
     private Path getDefaultDatabaseFolder() {
         String dataHome;
         if (System.getProperty("os.name").toLowerCase().contains("win")) {
