@@ -44,6 +44,6 @@ public class ClassAnalyzer extends ClassVisitor {
     @Override
     public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
         MethodNode methodNode = new MethodNode(api, access, name, descriptor, signature, exceptions);
-        return new MethodAnalyzer(api, super.visitMethod(access, name, descriptor, signature, exceptions), className, methodNode, activeTransaction);
+        return new MethodAnalyzer(api, super.visitMethod(access, name, descriptor, signature, exceptions), currentNode, methodNode, activeTransaction);
     }
 }
