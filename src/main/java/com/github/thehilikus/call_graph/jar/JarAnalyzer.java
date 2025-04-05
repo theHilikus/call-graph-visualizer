@@ -46,7 +46,6 @@ public class JarAnalyzer {
                     try (InputStream inputStream = jarFile.getInputStream(entry)) {
                         ClassReader classReader = new ClassReader(inputStream);
                         String className = entry.getName().replace("/", ".").substring(0, entry.getName().length() - 6);
-                        LOG.debug("Processing class {}", className);
                         ClassAnalyzer classAnalyzer = new ClassAnalyzer(className, tx);
                         classReader.accept(classAnalyzer, 0);
                     } catch (IOException e) {
