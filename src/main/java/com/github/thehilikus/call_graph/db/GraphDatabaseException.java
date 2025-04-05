@@ -7,4 +7,8 @@ public class GraphDatabaseException extends RuntimeException {
     public GraphDatabaseException(String msg) {
         super(msg);
     }
+
+    public GraphDatabaseException(String msg, Exception e) {
+        super(msg, e);
+    }
 }

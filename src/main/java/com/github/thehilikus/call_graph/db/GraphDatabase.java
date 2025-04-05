@@ -1,5 +1,6 @@
 package com.github.thehilikus.call_graph.db;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
@@ -66,5 +68,14 @@ public class GraphDatabase {
             databaseService = managementService.database(GraphDatabaseSettings.DEFAULT_DATABASE_NAME);
         }
         return new GraphTransaction(databaseService.beginTx());
+    }
+
+    public void truncate() {
+        LOG.info("Truncating Neo4j database '{}' in {}", databaseName, directory);
+        try {
+            FileUtils.deleteDirectory(directory.resolve(databaseName).toFile());
+        } catch (IOException e) {
+            throw new GraphDatabaseException("Error truncating database", e);
+        }
     }
 }

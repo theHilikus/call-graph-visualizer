@@ -30,6 +30,13 @@ public class ProcessCommand implements Command {
         GraphDatabase db = new GraphDatabase(globalOptions.databaseFolder, globalOptions.databaseName);
         JarAnalyzer jarAnalyzer = new JarAnalyzer(jarPath);
 
+        if (truncate) {
+            if (dryRun) {
+                LOG.info("Not truncating database in dry-run mode");
+            } else {
+                db.truncate();
+            }
+        }
         db.initialize();
         StopWatch stopWatch = StopWatch.createStarted();
         LOG.info("Start processing jar {}", jarPath);
