@@ -27,6 +27,16 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.neo4j.client</groupId>
+            <artifactId>neo4j-browser</artifactId>
+            <version>5.24.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>12.0.18</version>
+        </dependency>
+        <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
             <version>9.7.1</version>
