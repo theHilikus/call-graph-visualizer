@@ -1,7 +1,10 @@
 package com.github.thehilikus.call_graph.jar;
 
+import com.github.thehilikus.call_graph.db.GraphConstants;
+import com.github.thehilikus.call_graph.db.GraphConstants.Jars;
 import com.github.thehilikus.call_graph.db.GraphDatabase;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
+import org.neo4j.graphdb.Node;
 import org.objectweb.asm.ClassReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +14,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Enumeration;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -39,6 +43,7 @@ public class JarAnalyzer {
         }
 
         try (JarFile jarFile = new JarFile(jarPath.toFile()); GraphTransaction tx = db.startTransaction()) {
+            Node currentNode = createJarNode(tx);
             Enumeration<JarEntry> entries = jarFile.entries();
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
@@ -46,8 +51,7 @@ public class JarAnalyzer {
                     try (InputStream inputStream = jarFile.getInputStream(entry)) {
                         ClassReader classReader = new ClassReader(inputStream);
                         String className = entry.getName().replace("/", ".").substring(0, entry.getName().length() - 6);
-                        LOG.debug("Processing class {}", className);
-                        ClassAnalyzer classAnalyzer = new ClassAnalyzer(className, tx);
+                        ClassAnalyzer classAnalyzer = new ClassAnalyzer(className, currentNode, tx);
                         classReader.accept(classAnalyzer, 0);
                     } catch (IOException e) {
                         System.err.println("Error reading class file: " + entry.getName() + " - " + e.getMessage());
@@ -63,5 +67,14 @@ public class JarAnalyzer {
         } catch (IOException e) {
             throw new JarAnalysisException("Error processing jar file: " + jarPath, e);
         }
+    }
+
+    private Node createJarNode(GraphTransaction activeTransaction) {
+        String jarName = jarPath.getFileName().toString();
+        Map<String, Object> properties = Map.of(
+                GraphConstants.ID, jarName
+        );
+        LOG.debug("Creating node for jar {}", jarName);
+        return activeTransaction.addNode(jarName, Jars.JAR_LABEL, properties);
     }
 }

@@ -1,5 +1,8 @@
 package com.github.thehilikus.call_graph.jar;
 
+import com.github.thehilikus.call_graph.db.GraphConstants;
+import com.github.thehilikus.call_graph.db.GraphConstants.Methods;
+import com.github.thehilikus.call_graph.db.GraphConstants.Relations;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
 import org.neo4j.graphdb.Node;
 import org.objectweb.asm.MethodVisitor;
@@ -17,23 +20,16 @@ import java.util.Map;
 public class MethodAnalyzer extends MethodVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(MethodAnalyzer.class);
     private static final String CONSTRUCTOR_NAME = "<init>";
-    private static final String CALLS = "Calls";
-    private final String className;
     private final GraphTransaction activeTransaction;
     private final String description;
     private final String methodName;
     private final int accessFlags;
+    private final Node classNode;
     private Node currentNode;
 
-    private static final String METHOD_LABEL = "Method";
-    private static final String FQN = "fullQualifiedClassName";
-    private static final String SIMPLE_NAME = "simpleClassName";
-    private static final String SIGNATURE = "signature";
-    private static final String STATIC = "static";
-
-    protected MethodAnalyzer(int api, MethodVisitor methodVisitor, String className, MethodNode methodNode, GraphTransaction tx) {
+    protected MethodAnalyzer(int api, MethodVisitor methodVisitor, Node classNode, MethodNode methodNode, GraphTransaction tx) {
         super(api, methodVisitor);
-        this.className = className;
+        this.classNode = classNode;
         this.methodName = methodNode.name;
         this.description = methodNode.desc;
         this.accessFlags = methodNode.access;
@@ -45,10 +41,18 @@ public class MethodAnalyzer extends MethodVisitor {
      */
     @Override
     public void visitCode() {
-        String signature = cleanMethodName(className, methodName) + buildArgumentsList();
-        currentNode = createOrGetExistingMethodNode(className, signature, accessFlags);
+        currentNode = createMethodNode();
+
+        LOG.trace("Creating relationship '{}' between {} and {}", Relations.CONTAINS, classNode.getProperty(GraphConstants.ID), currentNode.getProperty(GraphConstants.ID));
+        activeTransaction.addRelationship(Relations.CONTAINS, classNode, currentNode);
 
         super.visitCode();
+    }
+
+    private Node createMethodNode() {
+        String className = classNode.getProperty(GraphConstants.ID).toString();
+        String signature = cleanMethodName(className, methodName) + buildArgumentsList();
+        return createOrGetExistingMethodNode(className, signature, accessFlags);
     }
 
     /**
@@ -62,8 +66,8 @@ public class MethodAnalyzer extends MethodVisitor {
         String targetClass = targetClassRaw.replace("/", ".");
         String targetMethod = cleanMethodName(targetClass, targetMethodNameRaw) + buildArgumentsList();
         Node targetNode = createOrGetExistingMethodNode(targetClass, targetMethod, targetAccessFlags);
-        LOG.trace("Creating relationship '{}' between {}#{} and {}#{}", CALLS, currentNode.getProperty(SIMPLE_NAME), currentNode.getProperty(SIGNATURE), targetNode.getProperty(SIMPLE_NAME), targetNode.getProperty(SIGNATURE));
-        activeTransaction.addRelationship(CALLS, currentNode, targetNode);
+        LOG.trace("Creating relationship '{}' between {} and {}", Relations.CALLS, currentNode.getProperty(GraphConstants.ID), targetNode.getProperty(GraphConstants.ID));
+        activeTransaction.addRelationship(Relations.CALLS, currentNode, targetNode);
 
         super.visitMethodInsn(targetAccessFlags, targetClassRaw, targetMethodNameRaw, descriptor, isInterface);
     }
@@ -74,13 +78,12 @@ public class MethodAnalyzer extends MethodVisitor {
         if (!activeTransaction.containsNode(nodeId)) {
             boolean isStatic = (accessFlags & Opcodes.ACC_STATIC) != 0;
             Map<String, Object> properties = Map.of(
-                    FQN, nodeClass,
-                    SIMPLE_NAME, nodeClass.substring(nodeClass.lastIndexOf('.') + 1),
-                    SIGNATURE, methodSignature,
-                    STATIC, isStatic
+                    GraphConstants.ID, nodeId,
+                    Methods.SIGNATURE, methodSignature,
+                    Methods.STATIC, isStatic
             );
             LOG.trace("Creating node for method {}#{}", nodeClass, methodSignature);
-            result = activeTransaction.addNode(nodeId, METHOD_LABEL, properties);
+            result = activeTransaction.addNode(nodeId, Methods.METHOD_LABEL, properties);
         } else {
             result = activeTransaction.getNode(nodeId);
         }
