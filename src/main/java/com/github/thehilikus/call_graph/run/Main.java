@@ -1,35 +1,16 @@
 package com.github.thehilikus.call_graph.run;
 
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.ParserProperties;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.HelpCommand;
 
 /**
  * Entry point
  */
+@Command(name = "call-graph", mixinStandardHelpOptions = true, versionProvider = VersionProvider.class, subcommands = {ProcessCommand.class, QueryCommand.class, HelpCommand.class})
 public class Main {
     public static void main(String[] args) {
-        CliOptions options = parseArguments(args);
-        Command command = options.command;
-
-        command.execute(options);
-    }
-
-    private static CliOptions parseArguments(String[] args) {
-        CliOptions result = new CliOptions();
-        ParserProperties defaults = ParserProperties.defaults();
-        final int usageWidth = 150;
-        defaults.withUsageWidth(usageWidth);
-        CmdLineParser parser = new CmdLineParser(result, defaults);
-        try {
-            parser.parseArgument(args);
-            return result;
-        } catch (CmdLineException e) {
-            System.err.println(e.getMessage());
-            parser.printUsage(System.err);
-            System.err.println();
-        }
-
-        throw new IllegalArgumentException("Failed to parse arguments");
+        int exitCode = new CommandLine(new Main()).execute(args);
+        System.exit(exitCode);
     }
 }

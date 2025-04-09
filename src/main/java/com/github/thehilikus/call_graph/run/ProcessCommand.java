@@ -3,10 +3,12 @@ package com.github.thehilikus.call_graph.run;
 import com.github.thehilikus.call_graph.db.GraphDatabase;
 import com.github.thehilikus.call_graph.jar.JarAnalyzer;
 import org.apache.commons.lang3.time.StopWatch;
-import org.kohsuke.args4j.Argument;
-import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
@@ -14,19 +16,23 @@ import java.util.concurrent.TimeUnit;
 /**
  * Command to process a jar
  */
-public class ProcessCommand implements Command {
+@Command(name = "process", description = "Process a jar to be able to query it later")
+public class ProcessCommand implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(ProcessCommand.class);
-    @Argument(required = true, metaVar = "jar", usage = "the jar to process")
+    @Parameters(description = "the jar to process", arity = "1")
     private Path jarPath;
 
-    @Option(name = "--dry-run", usage = "Don't write to the database")
+    @Option(names = "--dry-run", description = "Don't write to the database")
     private boolean dryRun = false;
 
-    @Option(name="--truncate", usage = "Deletes the existing database before creating a new one")
+    @Option(names="--truncate", description = "Deletes the existing database before creating a new one")
     private boolean truncate = false;
 
+    @Mixin
+    private GlobalOptions globalOptions;
+
     @Override
-    public void execute(CliOptions globalOptions) {
+    public void run() {
         GraphDatabase db = new GraphDatabase(globalOptions.databaseFolder, globalOptions.databaseName);
         JarAnalyzer jarAnalyzer = new JarAnalyzer(jarPath);
 
