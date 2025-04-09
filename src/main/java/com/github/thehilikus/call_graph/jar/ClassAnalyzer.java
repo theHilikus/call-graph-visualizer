@@ -37,7 +37,7 @@ public class ClassAnalyzer extends ClassVisitor {
 
     @Override
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-        if (isIncluded(className, classFilter)) {
+        if (MethodAnalyzer.isClassIncluded(className, classFilter)) {
             LOG.debug("Creating class node for {}", className);
             currentNode = createClassNode();
 
@@ -46,26 +46,6 @@ public class ClassAnalyzer extends ClassVisitor {
         }
 
         super.visit(version, access, name, signature, superName, interfaces);
-    }
-
-    static boolean isIncluded(String className, Filter classFilter) {
-        for (String prefix : classFilter.exclude()) {
-            if (className.startsWith(prefix)) {
-                LOG.trace("Excluding class {}", className);
-                return false;
-            }
-        }
-        if (classFilter.include() != null) {
-            for (String prefix : classFilter.include()) {
-                if (className.startsWith(prefix)) {
-                    LOG.trace("Including class {}", className);
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        return true;
     }
 
     private Node createClassNode() {
@@ -82,6 +62,6 @@ public class ClassAnalyzer extends ClassVisitor {
             return null;
         }
         MethodNode methodNode = new MethodNode(api, access, name, descriptor, signature, exceptions);
-        return new MethodAnalyzer(api, super.visitMethod(access, name, descriptor, signature, exceptions), currentNode, methodNode, activeTransaction);
+        return new MethodAnalyzer(api, super.visitMethod(access, name, descriptor, signature, exceptions), currentNode, methodNode, activeTransaction, classFilter);
     }
 }
