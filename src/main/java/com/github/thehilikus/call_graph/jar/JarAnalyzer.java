@@ -4,6 +4,7 @@ import com.github.thehilikus.call_graph.db.GraphConstants;
 import com.github.thehilikus.call_graph.db.GraphConstants.Jars;
 import com.github.thehilikus.call_graph.db.GraphDatabase;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
+import com.github.thehilikus.call_graph.run.Filter;
 import org.neo4j.graphdb.Node;
 import org.objectweb.asm.ClassReader;
 import org.slf4j.Logger;
@@ -24,9 +25,10 @@ import java.util.jar.JarFile;
 public class JarAnalyzer {
     private static final Logger LOG = LoggerFactory.getLogger(JarAnalyzer.class);
     private final Path jarPath;
+    private final boolean dryRun;
 
 
-    public JarAnalyzer(Path jarPath) {
+    public JarAnalyzer(Path jarPath, boolean dryRun) {
         if (!Files.exists(jarPath) || !Files.isReadable(jarPath)) {
             throw new IllegalArgumentException("jarPath does not exist or is not readable: " + jarPath);
         }
@@ -35,9 +37,10 @@ public class JarAnalyzer {
         }
 
         this.jarPath = jarPath;
+        this.dryRun = dryRun;
     }
 
-    public void process(GraphDatabase db, boolean dryRun) {
+    public void process(GraphDatabase db, Filter classFilter) {
         if (dryRun) {
             LOG.warn("Running in dry-run mode. Changes won't be committed to the database");
         }
@@ -51,14 +54,14 @@ public class JarAnalyzer {
                     try (InputStream inputStream = jarFile.getInputStream(entry)) {
                         ClassReader classReader = new ClassReader(inputStream);
                         String className = entry.getName().replace("/", ".").substring(0, entry.getName().length() - 6);
-                        ClassAnalyzer classAnalyzer = new ClassAnalyzer(className, currentNode, tx);
+                        ClassAnalyzer classAnalyzer = new ClassAnalyzer(className, currentNode, tx, classFilter);
                         classReader.accept(classAnalyzer, 0);
                     } catch (IOException e) {
                         System.err.println("Error reading class file: " + entry.getName() + " - " + e.getMessage());
                     }
                 }
             }
-            LOG.debug("Done processing jar. {} nodes in graph", tx.getNodeCount());
+            LOG.info("Done processing jar. {} nodes in graph", tx.getNodeCount());
             if (!dryRun) {
                 tx.commit();
             } else {

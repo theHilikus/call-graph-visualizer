@@ -11,6 +11,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 import java.nio.file.Path;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -28,13 +29,19 @@ public class ProcessCommand implements Runnable {
     @Option(names="--truncate", description = "Deletes the existing database before creating a new one")
     private boolean truncate = false;
 
+    @Option(names ="--include-packages", description = "Comma separated list of packages to include. If omitted, include everything")
+    private Set<String> includePackages = null;
+
+    @Option(names ="--exclude-packages", description = "Comma separated list of packages to exclude. If omitted, exclude JDK classes")
+    private Set<String> excludePackages = Set.of("java.", "javax.", "sun.", "com.sun.", "jdk.", "org.w3c.dom.", "org.xml.sax.");
+
     @Mixin
     private GlobalOptions globalOptions;
 
     @Override
     public void run() {
         GraphDatabase db = new GraphDatabase(globalOptions.databaseFolder, globalOptions.databaseName);
-        JarAnalyzer jarAnalyzer = new JarAnalyzer(jarPath);
+        JarAnalyzer jarAnalyzer = new JarAnalyzer(jarPath, dryRun);
 
         if (truncate) {
             if (dryRun) {
@@ -46,7 +53,7 @@ public class ProcessCommand implements Runnable {
         db.initialize();
         StopWatch stopWatch = StopWatch.createStarted();
         LOG.info("Start processing jar {}", jarPath);
-        jarAnalyzer.process(db, dryRun);
+        jarAnalyzer.process(db, new Filter(includePackages, excludePackages));
         LOG.info("Done processing jar in {} ms", stopWatch.getTime(TimeUnit.MILLISECONDS));
         db.shutdown();
     }
