@@ -38,6 +38,7 @@ public class ClassAnalyzer extends ClassVisitor {
     @Override
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
         if (isIncluded(className, classFilter)) {
+            LOG.debug("Creating class node for {}", className);
             currentNode = createClassNode();
 
             LOG.trace("Creating relationship '{}' between {} and {}", GraphConstants.Relations.ARCHIVES, jarNode.getProperty(GraphConstants.ID), currentNode.getProperty(GraphConstants.ID));

@@ -82,7 +82,7 @@ public class MethodAnalyzer extends MethodVisitor {
                     Methods.SIGNATURE, methodSignature,
                     Methods.STATIC, isStatic
             );
-            LOG.trace("Creating node for method {}#{}", nodeClass, methodSignature);
+            LOG.trace("Creating method node for {}#{}", nodeClass, methodSignature);
             result = activeTransaction.addNode(nodeId, Methods.METHOD_LABEL, properties);
         } else {
             result = activeTransaction.getNode(nodeId);
