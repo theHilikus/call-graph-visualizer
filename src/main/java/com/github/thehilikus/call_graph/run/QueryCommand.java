@@ -41,8 +41,11 @@ public class QueryCommand implements Runnable{
         browser.start();
         try {
             Desktop.getDesktop().browse(new URI("http://localhost:" + browserPort));
+            browser.join();
         } catch (IOException | URISyntaxException e) {
             throw new BrowserException("Error launching browser", e);
+        } catch (InterruptedException e) {
+            LOG.info("Browser stopped by user");
         }
     }
 }

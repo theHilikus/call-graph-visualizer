@@ -19,6 +19,7 @@ public class BrowserServer {
     private static final String STATIC_RESOURCES_PATH = "/browser";
     private final int browserPort;
     private Server server;
+    private Thread thread;
 
     public BrowserServer(int browserPort) {
         this.browserPort = browserPort;
@@ -64,9 +65,15 @@ public class BrowserServer {
     private void stop() {
         LOG.info("Stopping jetty server");
         try {
+            thread.interrupt();
             server.stop();
         } catch (Exception e) {
             throw new BrowserException("Failed to stop browser server", e);
         }
+    }
+
+    public void join() throws InterruptedException {
+        thread = Thread.currentThread();
+        server.join();
     }
 }
