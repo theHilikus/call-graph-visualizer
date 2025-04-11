@@ -6,8 +6,8 @@ import com.github.thehilikus.call_graph.db.GraphDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.ParentCommand;
 
 import java.awt.*;
 import java.io.IOException;
@@ -28,12 +28,12 @@ public class QueryCommand implements Runnable{
     @Option(names = "--browser-port", description = "the neo4j-browser port to use")
     private int browserPort = 8080;
 
-    @Mixin
-    private GlobalOptions globalOptions;
+    @ParentCommand
+    private Main main;
 
     @Override
     public void run() {
-        GraphDatabase db = new GraphDatabase(globalOptions.databaseFolder, globalOptions.databaseName);
+        GraphDatabase db = new GraphDatabase(main.databaseFolder, main.databaseName);
         db.initialize(boltPort);
 
         BrowserServer browser = new BrowserServer(browserPort);
