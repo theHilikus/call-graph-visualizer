@@ -6,9 +6,9 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.ParentCommand;
 
 import java.nio.file.Path;
 import java.util.Set;
@@ -35,12 +35,12 @@ public class ProcessCommand implements Runnable {
     @Option(names ="--exclude-packages", description = "Comma separated list of packages to exclude. If omitted, exclude JDK classes")
     private Set<String> excludePackages = Set.of("java.", "javax.", "sun.", "com.sun.", "jdk.", "org.w3c.dom.", "org.xml.sax.");
 
-    @Mixin
-    private GlobalOptions globalOptions;
+    @ParentCommand
+    private Main main;
 
     @Override
     public void run() {
-        GraphDatabase db = new GraphDatabase(globalOptions.databaseFolder, globalOptions.databaseName);
+        GraphDatabase db = new GraphDatabase(main.databaseFolder, main.databaseName);
         JarAnalyzer jarAnalyzer = new JarAnalyzer(jarPath, dryRun);
 
         if (truncate) {
