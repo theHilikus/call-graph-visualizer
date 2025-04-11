@@ -1,5 +1,8 @@
 package com.github.thehilikus.call_graph.run;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
@@ -17,6 +20,16 @@ public class Main {
 
     @Option(names = "--db-name", description = "the database name", scope = CommandLine.ScopeType.INHERIT)
     protected String databaseName = "call-graphs";
+
+    @Option(names= {"-v", "--verbose"}, description = "Specify multiple -v options to increase verbosity (e.g., -v, -vv, -vvv)", scope = CommandLine.ScopeType.INHERIT)
+    private void applyLogLevel(boolean[] verbosity) {
+        Logger topAppLogger = (Logger) LoggerFactory.getLogger("com.github.thehilikus.call_graph");
+        switch (verbosity.length) {
+            case 1 -> topAppLogger.setLevel(Level.DEBUG);
+            case 2 -> topAppLogger.setLevel(Level.TRACE);
+            case 3 -> ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)).setLevel(Level.TRACE);
+        }
+    }
 
     public static void main(String[] args) {
         int exitCode = new CommandLine(new Main()).execute(args);

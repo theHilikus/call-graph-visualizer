@@ -4,10 +4,10 @@
             <pattern>%d{HH:mm:ss.SSS} %-5level [%15.15thread] %logger{0} - %msg%n</pattern>
         </encoder>
     </appender>
-    <root level="INFO">
+    <root level="WARN">
         <appender-ref ref="CONSOLE"/>
     </root>
-    <logger name="com.github.thehilikus.call_graph" level="TRACE" additivity="false">
+    <logger name="com.github.thehilikus.call_graph" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
     </logger>
 </configuration>
