@@ -67,7 +67,7 @@
                 <artifactId>git-commit-id-maven-plugin</artifactId>
                 <version>9.0.1</version>
                 <configuration>
-                    <verbose>true</verbose>
+                    <verbose>false</verbose>
                     <gitDescribe>
                         <match>never-match-tags</match>
                     </gitDescribe>
@@ -85,14 +85,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.7.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
                     <archive>
                         <manifest>
@@ -104,10 +96,19 @@
                             <Implementation-Version>${project.version}_g${git.commit.id.describe}</Implementation-Version>
                         </manifestEntries>
                     </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
+                    <descriptors>
+                        <descriptor>src/assembly/jar-with-services.xml</descriptor>
+                    </descriptors>
+                    <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
