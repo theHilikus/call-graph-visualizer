@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
+import org.neo4j.configuration.connectors.HttpConnector;
 import org.neo4j.configuration.helpers.SocketAddress;
 import org.neo4j.dbms.api.DatabaseManagementService;
 import org.neo4j.dbms.api.DatabaseManagementServiceBuilder;
@@ -12,7 +13,6 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
@@ -28,23 +28,29 @@ public class GraphDatabase {
     private final String databaseName;
     private GraphDatabaseService databaseService;
     private DatabaseManagementService managementService;
+    private int boltPort = -1;
+    private int httpPort = -1;
 
     public GraphDatabase(Path directory, String databaseName) {
         this.directory = directory;
         this.databaseName = databaseName;
     }
 
-    public void initialize() {
-        initialize(null);
+    public void enableBrowser(int boltPort, int httpPort) {
+        this.boltPort = boltPort;
+        this.httpPort = httpPort;
     }
 
-    public void initialize(@Nullable Integer boltPort) {
+    public void initialize() {
         LOG.info("Initializing Neo4j database '{}' at {}", databaseName, directory);
         StopWatch stopWatch = StopWatch.createStarted();
         Neo4jDatabaseManagementServiceBuilder serviceBuilder = new DatabaseManagementServiceBuilder(directory.resolve(databaseName));
-        if (boltPort != null) {
+        if (boltPort != -1) {
+            LOG.info("Enabling Bolt and HTTP connectors in ports {} and {}", boltPort, httpPort);
             serviceBuilder.setConfig(BoltConnector.enabled, true);
             serviceBuilder.setConfig(BoltConnector.listen_address, new SocketAddress("localhost", boltPort));
+            serviceBuilder.setConfig(HttpConnector.enabled, true);
+            serviceBuilder.setConfig(HttpConnector.listen_address, new SocketAddress("localhost", httpPort));
         }
         managementService = serviceBuilder.build();
 

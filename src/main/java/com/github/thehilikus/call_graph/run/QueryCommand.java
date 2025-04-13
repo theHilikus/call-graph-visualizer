@@ -1,7 +1,6 @@
 package com.github.thehilikus.call_graph.run;
 
 import com.github.thehilikus.call_graph.browser.BrowserException;
-import com.github.thehilikus.call_graph.browser.BrowserServer;
 import com.github.thehilikus.call_graph.db.GraphDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,30 +21,25 @@ public class QueryCommand implements Runnable{
     private static final Logger LOG = LoggerFactory.getLogger(QueryCommand.class);
     @SuppressWarnings("MagicNumber")
     @Option(names = "--bolt-port", description = "the bolt port to use")
-    private Integer boltPort = 7687;
+    private int boltPort = 7687;
 
     @SuppressWarnings("MagicNumber")
-    @Option(names = "--browser-port", description = "the neo4j-browser port to use")
-    private int browserPort = 8080;
+    @Option(names = "--http-port", description = "the neo4j-browser port to use")
+    private int httpPort = 7474;
 
     @ParentCommand
     private Main main;
 
     @Override
     public void run() {
-        GraphDatabase db = new GraphDatabase(main.databaseFolder, main.databaseName);
-        db.initialize(boltPort);
-
-        BrowserServer browser = new BrowserServer(browserPort);
         LOG.info("Starting neo4j-browser");
-        browser.start();
+        GraphDatabase db = new GraphDatabase(main.databaseFolder, main.databaseName);
+        db.enableBrowser(boltPort, httpPort);
+        db.initialize();
         try {
-            Desktop.getDesktop().browse(new URI("http://localhost:" + browserPort));
-            browser.join();
+            Desktop.getDesktop().browse(new URI("http://localhost:" + httpPort));
         } catch (IOException | URISyntaxException e) {
             throw new BrowserException("Error launching browser", e);
-        } catch (InterruptedException e) {
-            LOG.info("Browser stopped by user");
         }
     }
 }
