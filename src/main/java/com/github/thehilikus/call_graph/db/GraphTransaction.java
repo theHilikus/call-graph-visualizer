@@ -14,6 +14,7 @@ public class GraphTransaction implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(GraphTransaction.class);
     private final Transaction neoTx;
     private final Map<String, Node> newNodes = new HashMap<>();
+    private final Map<String, Relationship> newRelationships = new HashMap<>();
 
     GraphTransaction(Transaction transaction) {
         LOG.info("Starting DB transaction");
@@ -39,6 +40,10 @@ public class GraphTransaction implements AutoCloseable {
     }
 
 
+    public boolean containsRelationship(String relationshipId) {
+        return newRelationships.containsKey(relationshipId);
+    }
+
     public Node getNode(String nodeId) {
         return newNodes.get(nodeId);
     }
@@ -57,9 +62,17 @@ public class GraphTransaction implements AutoCloseable {
         neoTx.rollback();
     }
 
-    public void addRelationship(String relationshipName, Node currentNode, Node targetNode) {
+    public Relationship addRelationship(String relationshipName, Node currentNode, Node targetNode) {
         throwIfNoTransaction();
-        currentNode.createRelationshipTo(targetNode, RelationshipType.withName(relationshipName));
+        Relationship result = currentNode.createRelationshipTo(targetNode, RelationshipType.withName(relationshipName));
+        String relationshipId = currentNode.getProperty(GraphConstants.ID) + "->" + targetNode.getProperty(GraphConstants.ID);
+        newRelationships.put(relationshipId, result);
+
+        return result;
+    }
+
+    public Relationship getRelationship(String relationshipId) {
+        return newRelationships.get(relationshipId);
     }
 
     public int getNodeCount() {

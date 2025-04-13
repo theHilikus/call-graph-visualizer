@@ -6,6 +6,7 @@ import com.github.thehilikus.call_graph.db.GraphConstants.Relations;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
 import com.github.thehilikus.call_graph.run.Filter;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -70,8 +71,9 @@ public class MethodAnalyzer extends MethodVisitor {
         if (isClassIncluded(targetClass, classFilter)) {
             String targetMethod = cleanMethodName(targetClass, targetMethodNameRaw) + buildArgumentsList();
             Node targetNode = createOrGetExistingMethodNode(targetClass, targetMethod, targetAccessFlags);
-            LOG.trace("Creating relationship '{}' between {} and {}", Relations.CALLS, currentNode.getProperty(GraphConstants.ID), targetNode.getProperty(GraphConstants.ID));
-            activeTransaction.addRelationship(Relations.CALLS, currentNode, targetNode);
+            Relationship relationship = createOrGetExistingRelationship(currentNode, targetNode);
+            int currentCount = (int) relationship.getProperty(Relations.COUNT, 0);
+            relationship.setProperty(Relations.COUNT, currentCount + 1);
         }
 
         super.visitMethodInsn(targetAccessFlags, targetClassRaw, targetMethodNameRaw, descriptor, isInterface);
@@ -91,6 +93,18 @@ public class MethodAnalyzer extends MethodVisitor {
             result = activeTransaction.addNode(nodeId, Methods.METHOD_LABEL, properties);
         } else {
             result = activeTransaction.getNode(nodeId);
+        }
+        return result;
+    }
+
+    private Relationship createOrGetExistingRelationship(Node currentNode, Node targetNode) {
+        Relationship result;
+        String relationshipId = currentNode.getProperty(GraphConstants.ID) + "->" + targetNode.getProperty(GraphConstants.ID);
+        if (!activeTransaction.containsRelationship(relationshipId)) {
+            LOG.trace("Creating relationship '{}' between {} and {}", Relations.CALLS, currentNode.getProperty(GraphConstants.ID), targetNode.getProperty(GraphConstants.ID));
+            result = activeTransaction.addRelationship(Relations.CALLS, currentNode, targetNode);
+        } else {
+            result = activeTransaction.getRelationship(relationshipId);
         }
         return result;
     }

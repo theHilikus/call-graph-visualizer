@@ -27,5 +27,6 @@ public class GraphConstants {
         public static final String CALLS = "Calls";
         public static final String CONTAINS = "Contains";
         public static final String ARCHIVES = "Archives";
+        public static final String COUNT = "count";
     }
 }
