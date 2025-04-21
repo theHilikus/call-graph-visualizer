@@ -24,7 +24,7 @@ public class MethodAnalyzer extends MethodVisitor {
     private static final String CONSTRUCTOR_NAME = "<init>";
     private final GraphTransaction activeTransaction;
     private final Filter classFilter;
-    private final String description;
+    private final String descriptor;
     private final String methodName;
     private final int accessFlags;
     private final Node classNode;
@@ -34,7 +34,7 @@ public class MethodAnalyzer extends MethodVisitor {
         super(api, methodVisitor);
         this.classNode = classNode;
         this.methodName = methodNode.name;
-        this.description = methodNode.desc;
+        this.descriptor = methodNode.desc;
         this.accessFlags = methodNode.access;
         this.activeTransaction = tx;
         this.classFilter = classFilter;
@@ -55,7 +55,7 @@ public class MethodAnalyzer extends MethodVisitor {
 
     private Node createMethodNode() {
         String className = classNode.getProperty(GraphConstants.ID).toString();
-        String signature = cleanMethodName(className, methodName) + buildArgumentsList();
+        String signature = cleanMethodName(className, methodName) + buildArgumentsList(descriptor);
         return createOrGetExistingMethodNode(className, signature, accessFlags);
     }
 
@@ -69,7 +69,7 @@ public class MethodAnalyzer extends MethodVisitor {
         }
         String targetClass = targetClassRaw.replace("/", ".");
         if (isClassIncluded(targetClass, classFilter)) {
-            String targetMethod = cleanMethodName(targetClass, targetMethodNameRaw) + buildArgumentsList();
+            String targetMethod = cleanMethodName(targetClass, targetMethodNameRaw) + buildArgumentsList(descriptor);
             Node targetNode = createOrGetExistingMethodNode(targetClass, targetMethod, targetAccessFlags);
             Relationship relationship = createOrGetExistingRelationship(currentNode, targetNode);
             int currentCount = (int) relationship.getProperty(Relations.COUNT, 0);
@@ -117,9 +117,9 @@ public class MethodAnalyzer extends MethodVisitor {
         return result;
     }
 
-    private String buildArgumentsList() {
+    private String buildArgumentsList(String methodDescriptor) {
         StringBuilder result = new StringBuilder("(");
-        Type[] argumentTypes = Type.getArgumentTypes(description);
+        Type[] argumentTypes = Type.getArgumentTypes(methodDescriptor);
         for (int i = 0; i < argumentTypes.length; i++) {
             result.append(argumentTypes[i].getClassName());
             if (i < argumentTypes.length - 1) {
