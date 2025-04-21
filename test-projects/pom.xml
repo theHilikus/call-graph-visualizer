@@ -8,6 +8,7 @@
     <artifactId>test-project-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
+    <name>Call Graph Test Projects</name>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
