@@ -4,7 +4,7 @@ import org.neo4j.graphdb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
+import javax.annotation.CheckForNull;
 import java.util.Map;
 
 /**
@@ -13,19 +13,16 @@ import java.util.Map;
 public class GraphTransaction implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(GraphTransaction.class);
     private final Transaction neoTx;
-    private final Map<String, Node> newNodes = new HashMap<>();
-    private final Map<String, Relationship> newRelationships = new HashMap<>();
 
     GraphTransaction(Transaction transaction) {
         LOG.info("Starting DB transaction");
         this.neoTx = transaction;
     }
 
-    public Node addNode(String id, String label, Map<String, Object> properties) {
+    public Node addNode(String label, Map<String, Object> properties) {
         throwIfNoTransaction();
         Node node = neoTx.createNode(Label.label(label));
         properties.forEach(node::setProperty);
-        newNodes.put(id, node);
         return node;
     }
 
@@ -35,17 +32,8 @@ public class GraphTransaction implements AutoCloseable {
         }
     }
 
-    public boolean containsNode(String nodeId) {
-        return newNodes.containsKey(nodeId);
-    }
-
-
-    public boolean containsRelationship(String relationshipId) {
-        return newRelationships.containsKey(relationshipId);
-    }
-
-    public Node getNode(String nodeId) {
-        return newNodes.get(nodeId);
+    public Node getNode(String label, String nodeId) {
+        return neoTx.findNode(Label.label(label), GraphConstants.ID, nodeId);
     }
 
     public void commit() {
@@ -64,20 +52,25 @@ public class GraphTransaction implements AutoCloseable {
 
     public Relationship addRelationship(String relationshipName, Node currentNode, Node targetNode) {
         throwIfNoTransaction();
-        Relationship result = currentNode.createRelationshipTo(targetNode, RelationshipType.withName(relationshipName));
-        String relationshipId = currentNode.getProperty(GraphConstants.ID) + "->" + targetNode.getProperty(GraphConstants.ID);
-        newRelationships.put(relationshipId, result);
 
-        return result;
+        return currentNode.createRelationshipTo(targetNode, RelationshipType.withName(relationshipName));
     }
 
-    public Relationship getRelationship(String relationshipId) {
-        return newRelationships.get(relationshipId);
+    @CheckForNull
+    public Relationship getRelationship(String relationshipType, Node sourceNode, Node targetNode) {
+        Iterable<Relationship> relationships = sourceNode.getRelationships(RelationshipType.withName(relationshipType));
+        for (Relationship relationship : relationships) {
+            if (relationship.getEndNode().equals(targetNode)) {
+                return relationship;
+            }
+        }
+
+        return null;
     }
 
-    public int getNodeCount() {
+    public long getNodeCount() {
         throwIfNoTransaction();
-        return newNodes.size();
+        return (long) neoTx.execute("MATCH (n) RETURN count(n) as count").next().get("count");
     }
 
     @Override

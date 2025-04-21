@@ -65,13 +65,13 @@ public class JarAnalyzer {
                     }
                 }
             }
+            LOG.info("Done processing jar {}: {} nodes in graph processed in {} ms\n", jarPath.getFileName(), tx.getNodeCount(), stopWatch.getTime(TimeUnit.MILLISECONDS));
+
             if (!dryRun) {
                 tx.commit();
             } else {
                 tx.rollback();
             }
-
-            LOG.info("Done processing jar {}: {} nodes in graph processed in {} ms\n", jarPath.getFileName(), tx.getNodeCount(), stopWatch.getTime(TimeUnit.MILLISECONDS));
         } catch (IOException e) {
             throw new JarAnalysisException("Error processing jar file: " + jarPath, e);
         }
@@ -83,6 +83,6 @@ public class JarAnalyzer {
                 GraphConstants.ID, jarName
         );
         LOG.debug("Creating node for jar {}", jarName);
-        return activeTransaction.addNode(jarName, Jars.JAR_LABEL, properties);
+        return activeTransaction.addNode(Jars.JAR_LABEL, properties);
     }
 }
