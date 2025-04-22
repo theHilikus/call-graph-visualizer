@@ -5,6 +5,7 @@ import com.github.thehilikus.call_graph.db.GraphConstants.Jars;
 import com.github.thehilikus.call_graph.db.GraphDatabase;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
 import com.github.thehilikus.call_graph.run.Filter;
+import org.apache.commons.lang3.time.StopWatch;
 import org.neo4j.graphdb.Node;
 import org.objectweb.asm.ClassReader;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -45,6 +47,8 @@ public class JarAnalyzer {
             LOG.warn("Running in dry-run mode. Changes won't be committed to the database");
         }
 
+        StopWatch stopWatch = StopWatch.createStarted();
+        LOG.info("==== Start processing jar {} ====", jarPath);
         try (JarFile jarFile = new JarFile(jarPath.toFile()); GraphTransaction tx = db.startTransaction()) {
             Node currentNode = createJarNode(tx);
             Enumeration<JarEntry> entries = jarFile.entries();
@@ -61,7 +65,8 @@ public class JarAnalyzer {
                     }
                 }
             }
-            LOG.info("Done processing jar. {} nodes in graph", tx.getNodeCount());
+            LOG.info("Done processing jar {}: {} nodes in graph processed in {} ms\n", jarPath.getFileName(), tx.getNodeCount(), stopWatch.getTime(TimeUnit.MILLISECONDS));
+
             if (!dryRun) {
                 tx.commit();
             } else {
@@ -78,6 +83,6 @@ public class JarAnalyzer {
                 GraphConstants.ID, jarName
         );
         LOG.debug("Creating node for jar {}", jarName);
-        return activeTransaction.addNode(jarName, Jars.JAR_LABEL, properties);
+        return activeTransaction.addNode(Jars.JAR_LABEL, properties);
     }
 }

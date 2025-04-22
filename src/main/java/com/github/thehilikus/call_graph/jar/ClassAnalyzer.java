@@ -53,7 +53,7 @@ public class ClassAnalyzer extends ClassVisitor {
                 GraphConstants.ID, className,
                 Classes.SIMPLE_NAME, className.substring(className.lastIndexOf('.') + 1)
         );
-        return activeTransaction.addNode(className, Classes.CLASS_LABEL, properties);
+        return activeTransaction.addNode(Classes.CLASS_LABEL, properties);
     }
 
     @Override

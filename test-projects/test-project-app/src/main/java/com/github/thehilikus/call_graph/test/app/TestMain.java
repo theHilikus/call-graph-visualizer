@@ -19,6 +19,7 @@ public class TestMain {
     private void sameJar() {
         AppClass appClass = new AppClass();
         appClass.appMethod();
+        appClass.appMethod();
     }
 
     private void acrossJars() {

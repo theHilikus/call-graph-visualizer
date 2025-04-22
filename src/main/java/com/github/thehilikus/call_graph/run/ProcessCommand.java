@@ -2,7 +2,6 @@ package com.github.thehilikus.call_graph.run;
 
 import com.github.thehilikus.call_graph.db.GraphDatabase;
 import com.github.thehilikus.call_graph.jar.JarAnalyzer;
-import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
@@ -12,7 +11,6 @@ import picocli.CommandLine.ParentCommand;
 
 import java.nio.file.Path;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Command to process a jar
@@ -20,8 +18,8 @@ import java.util.concurrent.TimeUnit;
 @Command(name = "process", description = "Process a jar to be able to query it later")
 public class ProcessCommand implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(ProcessCommand.class);
-    @Parameters(description = "the jar to process", arity = "1")
-    private Path jarPath;
+    @Parameters(description = "the jars to process", arity = "1..*")
+    private Set<Path> jarPaths;
 
     @Option(names = "--dry-run", description = "Don't write to the database")
     private boolean dryRun = false;
@@ -40,9 +38,13 @@ public class ProcessCommand implements Runnable {
 
     @Override
     public void run() {
-        GraphDatabase db = new GraphDatabase(main.databaseFolder, main.databaseName);
-        JarAnalyzer jarAnalyzer = new JarAnalyzer(jarPath, dryRun);
+        GraphDatabase db = prepareGraphDb();
+        processJars(db);
+        db.shutdown();
+    }
 
+    private GraphDatabase prepareGraphDb() {
+        GraphDatabase db = new GraphDatabase(main.databaseFolder, main.databaseName);
         if (truncate) {
             if (dryRun) {
                 LOG.info("Not truncating database in dry-run mode");
@@ -51,10 +53,14 @@ public class ProcessCommand implements Runnable {
             }
         }
         db.initialize();
-        StopWatch stopWatch = StopWatch.createStarted();
-        LOG.info("Start processing jar {}", jarPath);
-        jarAnalyzer.process(db, new Filter(includePackages, excludePackages));
-        LOG.info("Done processing jar in {} ms", stopWatch.getTime(TimeUnit.MILLISECONDS));
-        db.shutdown();
+
+        return db;
+    }
+
+    private void processJars(GraphDatabase db) {
+        for (Path jarPath : jarPaths) {
+            JarAnalyzer jarAnalyzer = new JarAnalyzer(jarPath, dryRun);
+            jarAnalyzer.process(db, new Filter(includePackages, excludePackages));
+        }
     }
 }

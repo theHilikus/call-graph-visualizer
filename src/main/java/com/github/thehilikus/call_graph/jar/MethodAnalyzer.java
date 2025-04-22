@@ -80,9 +80,9 @@ public class MethodAnalyzer extends MethodVisitor {
     }
 
     private Node createOrGetExistingMethodNode(String nodeClass, String methodSignature, int accessFlags) {
-        Node result;
         String nodeId = nodeClass + "#" + methodSignature;
-        if (!activeTransaction.containsNode(nodeId)) {
+        Node result = activeTransaction.getNode(Methods.METHOD_LABEL, nodeId);
+        if (result == null) {
             boolean isStatic = (accessFlags & Opcodes.ACC_STATIC) != 0;
             Map<String, Object> properties = Map.of(
                     GraphConstants.ID, nodeId,
@@ -90,22 +90,19 @@ public class MethodAnalyzer extends MethodVisitor {
                     Methods.STATIC, isStatic
             );
             LOG.trace("Creating method node for {}#{}", nodeClass, methodSignature);
-            result = activeTransaction.addNode(nodeId, Methods.METHOD_LABEL, properties);
-        } else {
-            result = activeTransaction.getNode(nodeId);
+            result = activeTransaction.addNode(Methods.METHOD_LABEL, properties);
         }
+
         return result;
     }
 
     private Relationship createOrGetExistingRelationship(Node currentNode, Node targetNode) {
-        Relationship result;
-        String relationshipId = currentNode.getProperty(GraphConstants.ID) + "->" + targetNode.getProperty(GraphConstants.ID);
-        if (!activeTransaction.containsRelationship(relationshipId)) {
+        Relationship result = activeTransaction.getRelationship(Relations.CALLS, currentNode, targetNode);
+        if (result == null) {
             LOG.trace("Creating relationship '{}' between {} and {}", Relations.CALLS, currentNode.getProperty(GraphConstants.ID), targetNode.getProperty(GraphConstants.ID));
             result = activeTransaction.addRelationship(Relations.CALLS, currentNode, targetNode);
-        } else {
-            result = activeTransaction.getRelationship(relationshipId);
         }
+
         return result;
     }
 
