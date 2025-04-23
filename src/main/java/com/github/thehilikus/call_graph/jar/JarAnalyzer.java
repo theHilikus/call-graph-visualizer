@@ -7,12 +7,10 @@ import com.github.thehilikus.call_graph.db.GraphTransaction;
 import com.github.thehilikus.call_graph.run.Filter;
 import org.apache.commons.lang3.time.StopWatch;
 import org.neo4j.graphdb.Node;
-import org.objectweb.asm.ClassReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Enumeration;
@@ -55,14 +53,10 @@ public class JarAnalyzer {
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
                 if (entry.getName().endsWith(".class")) {
-                    try (InputStream inputStream = jarFile.getInputStream(entry)) {
-                        ClassReader classReader = new ClassReader(inputStream);
-                        String className = entry.getName().replace("/", ".").substring(0, entry.getName().length() - 6);
-                        ClassAnalyzer classAnalyzer = new ClassAnalyzer(className, currentNode, tx, classFilter);
-                        classReader.accept(classAnalyzer, 0);
-                    } catch (IOException e) {
-                        System.err.println("Error reading class file: " + entry.getName() + " - " + e.getMessage());
-                    }
+                    String className = entry.getName().replace("/", ".").substring(0, entry.getName().length() - 6);
+
+                    ClassCallGraphAnalyzer classCallGraphAnalyzer = new ClassCallGraphAnalyzer(className, currentNode, tx, classFilter);
+                    classCallGraphAnalyzer.start(jarFile, entry);
                 }
             }
             LOG.info("Done processing jar {}: {} nodes in graph processed in {} ms\n", jarPath.getFileName(), tx.getNodeCount(), stopWatch.getTime(TimeUnit.MILLISECONDS));

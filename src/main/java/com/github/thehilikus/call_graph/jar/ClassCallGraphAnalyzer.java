@@ -5,6 +5,7 @@ import com.github.thehilikus.call_graph.db.GraphConstants.Classes;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
 import com.github.thehilikus.call_graph.run.Filter;
 import org.neo4j.graphdb.Node;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -12,14 +13,18 @@ import org.objectweb.asm.tree.MethodNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 
 /**
  * POJO to navigate classes in the jar
  */
-public class ClassAnalyzer extends ClassVisitor {
-    private static final Logger LOG = LoggerFactory.getLogger(ClassAnalyzer.class);
+public class ClassCallGraphAnalyzer extends ClassVisitor {
+    private static final Logger LOG = LoggerFactory.getLogger(ClassCallGraphAnalyzer.class);
     private final String className;
     private final Node jarNode;
     private final GraphTransaction activeTransaction;
@@ -27,12 +32,21 @@ public class ClassAnalyzer extends ClassVisitor {
     private Node currentNode;
 
 
-    protected ClassAnalyzer(String className, Node jarNode, GraphTransaction tx, Filter classFilter) {
+    protected ClassCallGraphAnalyzer(String className, Node jarNode, GraphTransaction tx, Filter classFilter) {
         super(Opcodes.ASM9);
         this.className = className;
         this.jarNode = jarNode;
         this.activeTransaction = tx;
         this.classFilter = classFilter;
+    }
+
+    public void start(JarFile jarFile, JarEntry entry) {
+        try (InputStream inputStream = jarFile.getInputStream(entry)) {
+            ClassReader classReader = new ClassReader(inputStream);
+            classReader.accept(this, 0);
+        } catch (IOException e) {
+            throw new JarAnalysisException("Error reading class file: " + entry.getName(), e);
+        }
     }
 
     @Override
