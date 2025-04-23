@@ -8,5 +8,5 @@ import java.util.Set;
  * @param include Collection of classes to include. If null, include everything
  * @param exclude Collection of classes to exclude
  */
-public record Filter(@Nullable Set<String> include, @Nonnull Set<String> exclude) {
+public record AnalysisFilter(@Nullable Set<String> include, @Nonnull Set<String> exclude) {
 }

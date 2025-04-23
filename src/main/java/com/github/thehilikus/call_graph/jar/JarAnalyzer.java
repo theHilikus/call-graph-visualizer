@@ -4,7 +4,7 @@ import com.github.thehilikus.call_graph.db.GraphConstants;
 import com.github.thehilikus.call_graph.db.GraphConstants.Jars;
 import com.github.thehilikus.call_graph.db.GraphDatabase;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
-import com.github.thehilikus.call_graph.run.Filter;
+import com.github.thehilikus.call_graph.run.AnalysisFilter;
 import org.apache.commons.lang3.time.StopWatch;
 import org.neo4j.graphdb.Node;
 import org.slf4j.Logger;
@@ -40,7 +40,7 @@ public class JarAnalyzer {
         this.dryRun = dryRun;
     }
 
-    public void process(GraphDatabase db, Filter classFilter) {
+    public void process(GraphDatabase db, AnalysisFilter classFilter) {
         if (dryRun) {
             LOG.warn("Running in dry-run mode. Changes won't be committed to the database");
         }

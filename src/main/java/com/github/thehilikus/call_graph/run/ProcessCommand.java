@@ -60,7 +60,7 @@ public class ProcessCommand implements Runnable {
     private void processJars(GraphDatabase db) {
         for (Path jarPath : jarPaths) {
             JarAnalyzer jarAnalyzer = new JarAnalyzer(jarPath, dryRun);
-            jarAnalyzer.process(db, new Filter(includePackages, excludePackages));
+            jarAnalyzer.process(db, new AnalysisFilter(includePackages, excludePackages));
         }
     }
 }

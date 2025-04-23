@@ -3,7 +3,7 @@ package com.github.thehilikus.call_graph.jar;
 import com.github.thehilikus.call_graph.db.GraphConstants;
 import com.github.thehilikus.call_graph.db.GraphConstants.Classes;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
-import com.github.thehilikus.call_graph.run.Filter;
+import com.github.thehilikus.call_graph.run.AnalysisFilter;
 import org.neo4j.graphdb.Node;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -28,11 +28,11 @@ public class ClassCallGraphAnalyzer extends ClassVisitor {
     private final String className;
     private final Node jarNode;
     private final GraphTransaction activeTransaction;
-    private final Filter classFilter;
+    private final AnalysisFilter classFilter;
     private Node currentNode;
 
 
-    protected ClassCallGraphAnalyzer(String className, Node jarNode, GraphTransaction tx, Filter classFilter) {
+    protected ClassCallGraphAnalyzer(String className, Node jarNode, GraphTransaction tx, AnalysisFilter classFilter) {
         super(Opcodes.ASM9);
         this.className = className;
         this.jarNode = jarNode;

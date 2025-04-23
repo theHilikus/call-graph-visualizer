@@ -4,7 +4,7 @@ import com.github.thehilikus.call_graph.db.GraphConstants;
 import com.github.thehilikus.call_graph.db.GraphConstants.Methods;
 import com.github.thehilikus.call_graph.db.GraphConstants.Relations;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
-import com.github.thehilikus.call_graph.run.Filter;
+import com.github.thehilikus.call_graph.run.AnalysisFilter;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.objectweb.asm.MethodVisitor;
@@ -23,14 +23,14 @@ public class MethodAnalyzer extends MethodVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(MethodAnalyzer.class);
     private static final String CONSTRUCTOR_NAME = "<init>";
     private final GraphTransaction activeTransaction;
-    private final Filter classFilter;
+    private final AnalysisFilter classFilter;
     private final String descriptor;
     private final String methodName;
     private final int accessFlags;
     private final Node classNode;
     private Node currentNode;
 
-    protected MethodAnalyzer(int api, MethodVisitor methodVisitor, Node classNode, MethodNode methodNode, GraphTransaction tx, Filter classFilter) {
+    protected MethodAnalyzer(int api, MethodVisitor methodVisitor, Node classNode, MethodNode methodNode, GraphTransaction tx, AnalysisFilter classFilter) {
         super(api, methodVisitor);
         this.classNode = classNode;
         this.methodName = methodNode.name;
@@ -128,7 +128,7 @@ public class MethodAnalyzer extends MethodVisitor {
         return result.toString();
     }
 
-    static boolean isClassIncluded(String className, Filter classFilter) {
+    static boolean isClassIncluded(String className, AnalysisFilter classFilter) {
         for (String prefix : classFilter.exclude()) {
             if (className.startsWith(prefix)) {
                 LOG.trace("Excluding class {}", className);
