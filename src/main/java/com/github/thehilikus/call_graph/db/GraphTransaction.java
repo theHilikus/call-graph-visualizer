@@ -39,7 +39,7 @@ public class GraphTransaction implements AutoCloseable {
     public void commit() {
         throwIfNoTransaction();
 
-        LOG.info("Committing DB transaction");
+        LOG.info("Committing DB transaction with {} nodes", getNodeCount());
         neoTx.commit();
     }
 
@@ -68,7 +68,7 @@ public class GraphTransaction implements AutoCloseable {
         return null;
     }
 
-    public long getNodeCount() {
+    private long getNodeCount() {
         throwIfNoTransaction();
         return (long) neoTx.execute("MATCH (n) RETURN count(n) as count").next().get("count");
     }

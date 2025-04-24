@@ -1,4 +1,4 @@
-package com.github.thehilikus.call_graph.jar;
+package com.github.thehilikus.call_graph.analysis;
 
 /**
  * Exception thrown when there is an error processing a jar
