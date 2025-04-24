@@ -1,10 +1,11 @@
-package com.github.thehilikus.call_graph.jar;
+package com.github.thehilikus.call_graph.analysis.call_graph;
 
+import com.github.thehilikus.call_graph.analysis.JarAnalysisException;
 import com.github.thehilikus.call_graph.db.GraphConstants;
 import com.github.thehilikus.call_graph.db.GraphConstants.Methods;
 import com.github.thehilikus.call_graph.db.GraphConstants.Relations;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
-import com.github.thehilikus.call_graph.run.AnalysisFilter;
+import com.github.thehilikus.call_graph.analysis.AnalysisFilter;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.objectweb.asm.MethodVisitor;
@@ -19,8 +20,8 @@ import java.util.Map;
 /**
  * POJO to navigate method relationships
  */
-public class MethodAnalyzer extends MethodVisitor {
-    private static final Logger LOG = LoggerFactory.getLogger(MethodAnalyzer.class);
+public class MethodCallGraphAnalyzer extends MethodVisitor {
+    private static final Logger LOG = LoggerFactory.getLogger(MethodCallGraphAnalyzer.class);
     private static final String CONSTRUCTOR_NAME = "<init>";
     private final GraphTransaction activeTransaction;
     private final AnalysisFilter classFilter;
@@ -30,7 +31,7 @@ public class MethodAnalyzer extends MethodVisitor {
     private final Node classNode;
     private Node currentNode;
 
-    protected MethodAnalyzer(int api, MethodVisitor methodVisitor, Node classNode, MethodNode methodNode, GraphTransaction tx, AnalysisFilter classFilter) {
+    protected MethodCallGraphAnalyzer(int api, MethodVisitor methodVisitor, Node classNode, MethodNode methodNode, GraphTransaction tx, AnalysisFilter classFilter) {
         super(api, methodVisitor);
         this.classNode = classNode;
         this.methodName = methodNode.name;
@@ -68,7 +69,7 @@ public class MethodAnalyzer extends MethodVisitor {
             throw new JarAnalysisException("Unknown current method with target method" + targetClassRaw + "#" + targetMethodNameRaw);
         }
         String targetClass = targetClassRaw.replace("/", ".");
-        if (isClassIncluded(targetClass, classFilter)) {
+        if (classFilter.isClassIncluded(targetClass)) {
             String targetMethod = cleanMethodName(targetClass, targetMethodNameRaw) + buildArgumentsList(descriptor);
             Node targetNode = createOrGetExistingMethodNode(targetClass, targetMethod, targetAccessFlags);
             Relationship relationship = createOrGetExistingRelationship(currentNode, targetNode);
@@ -126,25 +127,5 @@ public class MethodAnalyzer extends MethodVisitor {
         result.append(")");
 
         return result.toString();
-    }
-
-    static boolean isClassIncluded(String className, AnalysisFilter classFilter) {
-        for (String prefix : classFilter.exclude()) {
-            if (className.startsWith(prefix)) {
-                LOG.trace("Excluding class {}", className);
-                return false;
-            }
-        }
-        if (classFilter.include() != null) {
-            for (String prefix : classFilter.include()) {
-                if (className.startsWith(prefix)) {
-                    LOG.trace("Including class {}", className);
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        return true;
     }
 }

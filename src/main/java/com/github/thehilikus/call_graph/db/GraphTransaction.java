@@ -46,7 +46,7 @@ public class GraphTransaction implements AutoCloseable {
     public void rollback() {
         throwIfNoTransaction();
 
-        LOG.info("Rolling back DB transaction");
+        LOG.info("Rolling back DB transaction with {} nodes", getNodeCount());
         neoTx.rollback();
     }
 
