@@ -9,6 +9,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.MethodNode;
 
+import javax.annotation.Nonnull;
+
 
 /**
  * Analyzer to create a calling graph of classes and methods
@@ -26,7 +28,7 @@ public class ClassCallGraphAnalyzer extends ClassAnalyzer {
     }
 
     @Override
-    public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+    public void visit(int version, int access, String name, String signature, @Nonnull String superName, @Nonnull String[] interfaces) {
         String className = name.replace("/", ".");
         if (classFilter.isClassIncluded(className)) {
             currentNode = activeTransaction.getNode(GraphConstants.Classes.CLASS_LABEL, className);

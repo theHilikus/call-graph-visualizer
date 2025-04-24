@@ -9,6 +9,7 @@ import org.objectweb.asm.Opcodes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.Map;
 
 /**
@@ -29,7 +30,7 @@ public class ClassHierarchyAnalyzer extends ClassAnalyzer {
     }
 
     @Override
-    public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+    public void visit(int version, int access, String name, String signature, @Nonnull String superName, @Nonnull String[] interfaces) {
         String className = name.replace("/", ".");
         if (classFilter.isClassIncluded(className)) {
             LOG.debug("Creating class node for {}", className);
