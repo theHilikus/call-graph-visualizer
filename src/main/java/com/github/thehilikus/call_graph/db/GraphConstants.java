@@ -28,5 +28,6 @@ public class GraphConstants {
         public static final String CONTAINS = "Contains";
         public static final String ARCHIVES = "Archives";
         public static final String COUNT = "count";
+        public static final String SUBTYPE = "SubtypeOf";
     }
 }

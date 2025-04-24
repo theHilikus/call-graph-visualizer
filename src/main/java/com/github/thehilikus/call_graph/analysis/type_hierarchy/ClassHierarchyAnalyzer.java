@@ -34,20 +34,40 @@ public class ClassHierarchyAnalyzer extends ClassAnalyzer {
         String className = name.replace("/", ".");
         if (classFilter.isClassIncluded(className)) {
             LOG.debug("Creating class node for {}", className);
-            Node currentNode = createClassNode(name);
+            Node currentNode = createOrGetExistingClassNode(className);
 
             LOG.trace("Creating relationship '{}' between {} and {}", GraphConstants.Relations.ARCHIVES, jarNode.getProperty(GraphConstants.ID), currentNode.getProperty(GraphConstants.ID));
             activeTransaction.addRelationship(GraphConstants.Relations.ARCHIVES, jarNode, currentNode); //jar to class
+
+            processSuperType(superName, currentNode);
+            for (String interfaceName : interfaces) {
+                processSuperType(interfaceName, currentNode);
+            }
         }
 
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
-    private Node createClassNode(String className) {
-        Map<String, Object> properties = Map.of(
-                GraphConstants.ID, className,
-                GraphConstants.Classes.SIMPLE_NAME, className.substring(className.lastIndexOf('.') + 1)
-        );
-        return activeTransaction.addNode(GraphConstants.Classes.CLASS_LABEL, properties);
+    private Node createOrGetExistingClassNode(String className) {
+        Node result = activeTransaction.getNode(GraphConstants.Classes.CLASS_LABEL, className);
+        if (result == null) {
+            Map<String, Object> properties = Map.of(
+                    GraphConstants.ID, className,
+                    GraphConstants.Classes.SIMPLE_NAME, className.substring(className.lastIndexOf('.') + 1)
+            );
+            LOG.debug("Creating class node for class {}", className);
+            result = activeTransaction.addNode(GraphConstants.Classes.CLASS_LABEL, properties);
+        }
+
+        return result;
+    }
+
+    private void processSuperType(String superName, Node currentNode) {
+        String superClassName = superName.replace("/", ".");
+        if (classFilter.isClassIncluded(superClassName)) {
+            Node superClassNode = createOrGetExistingClassNode(superClassName);
+            LOG.trace("Creating relationship '{}' between {} and {}", GraphConstants.Relations.SUBTYPE, currentNode.getProperty(GraphConstants.ID), superClassNode.getProperty(GraphConstants.ID));
+            activeTransaction.addRelationship(GraphConstants.Relations.SUBTYPE, currentNode, superClassNode);
+        }
     }
 }
