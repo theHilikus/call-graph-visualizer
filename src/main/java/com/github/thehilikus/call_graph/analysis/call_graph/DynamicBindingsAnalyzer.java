@@ -51,6 +51,9 @@ public class DynamicBindingsAnalyzer {
             String targetMethodName = targetMethodNode.getProperty(GraphConstants.Methods.SIGNATURE).toString();
             Node targetClassNode = contains.get().getStartNode();
             result = findOverrides(targetMethodName, targetClassNode);
+            if (!result.isEmpty() && (boolean) targetMethodNode.getProperty(GraphConstants.Methods.ABSTRACT, false)) {
+                targetMethodNode.getRelationships(Direction.INCOMING, RelationshipType.withName(GraphConstants.Relations.CALLS)).forEach(Relationship::delete);
+            }
         } else {
             //pointing to method that is not contained by any class. This is caused by calls to parent methods via children references
             result = fixCallsDoneToParentMethodsViaChildren(targetMethodNode);

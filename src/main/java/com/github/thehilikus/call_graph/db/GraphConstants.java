@@ -20,6 +20,7 @@ public class GraphConstants {
         public static final String METHOD_LABEL = "Method";
         public static final String SIGNATURE = "signature";
         public static final String STATIC = "static";
+        public static final String ABSTRACT = "abstract";
     }
 
     public static class Relations {

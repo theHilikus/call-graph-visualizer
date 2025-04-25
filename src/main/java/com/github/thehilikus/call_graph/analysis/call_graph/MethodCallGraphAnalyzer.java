@@ -76,9 +76,11 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
 
     private static void addMethodNodeProperties(Entity methodNode, String nodeId, int opcode) {
         boolean isStatic = (opcode & Opcodes.ACC_STATIC) != 0;
-        String signature = nodeId.substring(nodeId.lastIndexOf('#') + 1);
         methodNode.setProperty(Methods.STATIC, isStatic);
+        String signature = nodeId.substring(nodeId.lastIndexOf('#') + 1);
         methodNode.setProperty(Methods.SIGNATURE, signature);
+        boolean isAbstract = (opcode & Opcodes.ACC_ABSTRACT) != 0;
+        methodNode.setProperty(Methods.ABSTRACT, isAbstract);
     }
 
     private Relationship createOrGetExistingRelationship(Node currentNode, Node targetNode) {
@@ -92,7 +94,7 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
         return result;
     }
 
-    private void addRelationshipProperties(Relationship relationship, int opcode) {
+    private static void addRelationshipProperties(Relationship relationship, int opcode) {
         boolean isDynamic = opcode == Opcodes.INVOKEVIRTUAL
                 || opcode == Opcodes.INVOKEINTERFACE
                 || opcode == Opcodes.INVOKEDYNAMIC;
