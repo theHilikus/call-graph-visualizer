@@ -33,8 +33,8 @@ public class GraphTransaction implements AutoCloseable {
         }
     }
 
-    public Node getNode(String label, String nodeId) {
-        return neoTx.findNode(Label.label(label), GraphConstants.FQN, nodeId);
+    public Node getNode(String label, String nodeFullyQualifiedName) {
+        return neoTx.findNode(Label.label(label), GraphConstants.FQN, nodeFullyQualifiedName);
     }
 
     public void commit() {

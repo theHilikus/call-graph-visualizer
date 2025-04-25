@@ -43,7 +43,7 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
     }
 
     /**
-     * Called for every call of the current method
+     * Called for every method call of the current method
      */
     @Override
     public void visitMethodInsn(int opcode, String targetClassRaw, String targetMethodNameRaw, String descriptor, boolean isInterface) {
