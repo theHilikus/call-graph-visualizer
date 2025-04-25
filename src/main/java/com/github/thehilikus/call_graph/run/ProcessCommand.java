@@ -41,6 +41,7 @@ public class ProcessCommand implements Runnable {
 
     @Override
     public void run() {
+        PerfTracker perfTracker = PerfTracker.createStarted("Complete process");
         GraphDatabase db = prepareGraphDb();
         try (GraphTransaction graphTransaction = db.startTransaction()) {
             if (dryRun) {
@@ -60,8 +61,10 @@ public class ProcessCommand implements Runnable {
             } else {
                 graphTransaction.rollback();
             }
+        } finally {
+            db.shutdown();
+            perfTracker.finish();
         }
-        db.shutdown();
     }
 
     private GraphDatabase prepareGraphDb() {

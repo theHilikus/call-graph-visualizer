@@ -5,6 +5,7 @@ import com.github.thehilikus.call_graph.db.GraphConstants.Classes;
 import com.github.thehilikus.call_graph.db.GraphConstants.Methods;
 import com.github.thehilikus.call_graph.db.GraphConstants.Relations;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
+import com.github.thehilikus.call_graph.run.PerfTracker;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
@@ -31,6 +32,7 @@ public class DynamicBindingsAnalyzer {
 
     public void analyze() {
         LOG.info("Start analyzing dynamic binding");
+        PerfTracker perfTracker = PerfTracker.createStarted("Dynamic binding analysis");
         try (Stream<Relationship> allDynamicCalls = activeTransaction.getAllRelationshipsWithProperty(Relations.CALLS, Relations.DYNAMIC, true)) {
             allDynamicCalls.forEach(dynamicCall -> {
                 Collection<Node> newCalls = processDynamicCalls(dynamicCall.getEndNode());
@@ -41,8 +43,9 @@ public class DynamicBindingsAnalyzer {
                     int currentCount = (int) dynamicBindingRelation.getProperty(Relations.COUNT, 0);
                     dynamicBindingRelation.setProperty(Relations.COUNT, currentCount + 1);
                 });
-
             });
+        } finally {
+            perfTracker.finish();
         }
     }
 

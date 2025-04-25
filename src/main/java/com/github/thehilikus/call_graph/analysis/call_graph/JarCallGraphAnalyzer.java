@@ -3,6 +3,7 @@ package com.github.thehilikus.call_graph.analysis.call_graph;
 import com.github.thehilikus.call_graph.analysis.AnalysisFilter;
 import com.github.thehilikus.call_graph.analysis.JarAnalysisException;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
+import com.github.thehilikus.call_graph.run.PerfTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,7 @@ public class JarCallGraphAnalyzer {
 
     public void analyze(GraphTransaction tx, AnalysisFilter classFilter) {
         LOG.debug("Start processing jar {}", jarPath);
+        PerfTracker perfTracker = PerfTracker.createStarted("Call-graph creation of '" + jarPath.getFileName() + "'");
         try (JarFile jarFile = new JarFile(jarPath.toFile())) {
             Enumeration<JarEntry> entries = jarFile.entries();
             while (entries.hasMoreElements()) {
@@ -44,6 +46,8 @@ public class JarCallGraphAnalyzer {
             }
         } catch (IOException e) {
             throw new JarAnalysisException("Error processing jar file: " + jarPath, e);
+        } finally {
+            perfTracker.finish();
         }
     }
 }

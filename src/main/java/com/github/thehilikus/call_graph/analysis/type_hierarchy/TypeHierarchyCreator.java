@@ -2,6 +2,7 @@ package com.github.thehilikus.call_graph.analysis.type_hierarchy;
 
 import com.github.thehilikus.call_graph.analysis.AnalysisFilter;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
+import com.github.thehilikus.call_graph.run.PerfTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,9 +24,11 @@ public class TypeHierarchyCreator {
 
     public void run(GraphTransaction transaction) {
         LOG.info("Creating type hierarchy graph");
+        PerfTracker perfTracker = PerfTracker.createStarted("Total type hierarchy graph creation");
         for (Path jarPath : jarPaths) {
             JarTypeHierarchyAnalyzer jarTypeHierarchyAnalyzer = new JarTypeHierarchyAnalyzer(jarPath);
             jarTypeHierarchyAnalyzer.analyze(transaction, analysisFilter);
         }
+        perfTracker.finish();
     }
 }

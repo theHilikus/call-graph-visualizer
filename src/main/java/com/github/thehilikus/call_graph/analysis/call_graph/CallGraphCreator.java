@@ -2,6 +2,7 @@ package com.github.thehilikus.call_graph.analysis.call_graph;
 
 import com.github.thehilikus.call_graph.analysis.AnalysisFilter;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
+import com.github.thehilikus.call_graph.run.PerfTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,12 +24,14 @@ public class CallGraphCreator {
     }
 
     public void run(GraphTransaction transaction) {
-        LOG.info("Creating call graph");
+        LOG.info("Creating call-graph");
+        PerfTracker perfTracker = PerfTracker.createStarted("Call-graph creation");
         for (Path jarPath : jarPaths) {
             JarCallGraphAnalyzer jarCallGraphAnalyzer = new JarCallGraphAnalyzer(jarPath);
             jarCallGraphAnalyzer.analyze(transaction, analysisFilter);
         }
         DynamicBindingsAnalyzer dynamicBindingsAnalyzer = new DynamicBindingsAnalyzer(transaction);
         dynamicBindingsAnalyzer.analyze();
+        perfTracker.finish();
     }
 }
