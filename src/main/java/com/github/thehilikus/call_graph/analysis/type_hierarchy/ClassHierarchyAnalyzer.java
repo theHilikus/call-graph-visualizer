@@ -33,7 +33,6 @@ public class ClassHierarchyAnalyzer extends ClassAnalyzer {
     public void visit(int version, int access, String name, String signature, @Nonnull String superName, @Nonnull String[] interfaces) {
         String className = name.replace("/", ".");
         if (classFilter.isClassIncluded(className)) {
-            LOG.debug("Creating class node for {}", className);
             Node currentNode = createOrGetExistingClassNode(className);
 
             LOG.trace("Creating relationship '{}' between {} and {}", GraphConstants.Relations.ARCHIVES, jarNode.getProperty(GraphConstants.ID), currentNode.getProperty(GraphConstants.ID));
@@ -55,7 +54,7 @@ public class ClassHierarchyAnalyzer extends ClassAnalyzer {
                     GraphConstants.ID, className,
                     GraphConstants.Classes.SIMPLE_NAME, className.substring(className.lastIndexOf('.') + 1)
             );
-            LOG.debug("Creating class node for class {}", className);
+            LOG.debug("Creating class node for {}", className);
             result = activeTransaction.addNode(GraphConstants.Classes.CLASS_LABEL, properties);
         }
 

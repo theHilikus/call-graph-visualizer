@@ -6,6 +6,7 @@ import com.github.thehilikus.call_graph.db.GraphConstants.Methods;
 import com.github.thehilikus.call_graph.db.GraphConstants.Relations;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
 import com.github.thehilikus.call_graph.analysis.AnalysisFilter;
+import org.neo4j.graphdb.Entity;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.objectweb.asm.MethodVisitor;
@@ -46,7 +47,11 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
      */
     @Override
     public void visitCode() {
-        currentNode = createMethodNode();
+        String className = classNode.getProperty(GraphConstants.ID).toString();
+        String signature = cleanMethodName(className, methodName) + buildArgumentsList(descriptor);
+        String nodeId = className + "#" + signature;
+        currentNode = createOrGetExistingMethodNode(nodeId);
+        addMethodNodeProperties(currentNode, nodeId, accessFlags);
 
         LOG.trace("Creating relationship '{}' between {} and {}", Relations.CONTAINS, classNode.getProperty(GraphConstants.ID), currentNode.getProperty(GraphConstants.ID));
         activeTransaction.addRelationship(Relations.CONTAINS, classNode, currentNode);
@@ -54,57 +59,61 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
         super.visitCode();
     }
 
-    private Node createMethodNode() {
-        String className = classNode.getProperty(GraphConstants.ID).toString();
-        String signature = cleanMethodName(className, methodName) + buildArgumentsList(descriptor);
-        return createOrGetExistingMethodNode(className, signature, accessFlags);
-    }
-
     /**
      * Called for every call of the current method
      */
     @Override
-    public void visitMethodInsn(int targetAccessFlags, String targetClassRaw, String targetMethodNameRaw, String descriptor, boolean isInterface) {
+    public void visitMethodInsn(int opcode, String targetClassRaw, String targetMethodNameRaw, String descriptor, boolean isInterface) {
         if (currentNode == null) {
             throw new JarAnalysisException("Unknown current method with target method" + targetClassRaw + "#" + targetMethodNameRaw);
         }
         String targetClass = targetClassRaw.replace("/", ".");
         if (classFilter.isClassIncluded(targetClass)) {
             String targetMethod = cleanMethodName(targetClass, targetMethodNameRaw) + buildArgumentsList(descriptor);
-            Node targetNode = createOrGetExistingMethodNode(targetClass, targetMethod, targetAccessFlags);
+            String nodeId = targetClass + "#" + targetMethod;
+            Node targetNode = createOrGetExistingMethodNode(nodeId);
+            addMethodNodeProperties(targetNode, nodeId, opcode);
+
             Relationship relationship = createOrGetExistingRelationship(currentNode, targetNode);
-            int currentCount = (int) relationship.getProperty(Relations.COUNT, 0);
-            relationship.setProperty(Relations.COUNT, currentCount + 1);
+            addRelationshipProperties(relationship, opcode);
         }
 
-        super.visitMethodInsn(targetAccessFlags, targetClassRaw, targetMethodNameRaw, descriptor, isInterface);
+        super.visitMethodInsn(opcode, targetClassRaw, targetMethodNameRaw, descriptor, isInterface);
     }
 
-    private Node createOrGetExistingMethodNode(String nodeClass, String methodSignature, int accessFlags) {
-        String nodeId = nodeClass + "#" + methodSignature;
+    private Node createOrGetExistingMethodNode(String nodeId) {
         Node result = activeTransaction.getNode(Methods.METHOD_LABEL, nodeId);
         if (result == null) {
-            boolean isStatic = (accessFlags & Opcodes.ACC_STATIC) != 0;
-            Map<String, Object> properties = Map.of(
-                    GraphConstants.ID, nodeId,
-                    Methods.SIGNATURE, methodSignature,
-                    Methods.STATIC, isStatic
-            );
-            LOG.trace("Creating method node for {}#{}", nodeClass, methodSignature);
-            result = activeTransaction.addNode(Methods.METHOD_LABEL, properties);
+            LOG.trace("Creating method node for {}", nodeId);
+            result = activeTransaction.addNode(Methods.METHOD_LABEL, Map.of(GraphConstants.ID, nodeId));
         }
 
         return result;
+    }
+
+    private void addMethodNodeProperties(Entity methodNode, String nodeId, int opcode) {
+        boolean isStatic = (opcode & Opcodes.ACC_STATIC) != 0;
+        String signature = nodeId.substring(nodeId.lastIndexOf('#') + 1);
+        methodNode.setProperty(Methods.STATIC, isStatic);
+        methodNode.setProperty(Methods.SIGNATURE, signature);
     }
 
     private Relationship createOrGetExistingRelationship(Node currentNode, Node targetNode) {
         Relationship result = activeTransaction.getRelationship(Relations.CALLS, currentNode, targetNode);
         if (result == null) {
             LOG.trace("Creating relationship '{}' between {} and {}", Relations.CALLS, currentNode.getProperty(GraphConstants.ID), targetNode.getProperty(GraphConstants.ID));
+
             result = activeTransaction.addRelationship(Relations.CALLS, currentNode, targetNode);
         }
 
         return result;
+    }
+
+    private void addRelationshipProperties(Relationship relationship, int methodAccessFlags) {
+        boolean isDynamic = (methodAccessFlags & Opcodes.INVOKEVIRTUAL) != 0 || (methodAccessFlags & Opcodes.INVOKESPECIAL) != 0 || (methodAccessFlags & Opcodes.INVOKEINTERFACE) != 0;
+        relationship.setProperty(Relations.DYNAMIC, isDynamic);
+        int currentCount = (int) relationship.getProperty(Relations.COUNT, 0);
+        relationship.setProperty(Relations.COUNT, currentCount + 1);
     }
 
     private String cleanMethodName(String className, String rawMethodName) {
