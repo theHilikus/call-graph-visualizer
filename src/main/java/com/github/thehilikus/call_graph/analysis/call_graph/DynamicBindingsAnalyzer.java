@@ -29,7 +29,7 @@ public class DynamicBindingsAnalyzer {
         this.activeTransaction = tx;
     }
 
-    public void start() {
+    public void analyze() {
         LOG.info("Start analyzing dynamic binding");
         try (Stream<Relationship> allDynamicCalls = activeTransaction.getAllRelationshipsWithProperty(Relations.CALLS, Relations.DYNAMIC, true)) {
             allDynamicCalls.forEach(dynamicCall -> {

@@ -38,7 +38,7 @@ public class JarTypeHierarchyAnalyzer {
         this.jarPath = jarPath;
     }
 
-    public void start(GraphTransaction tx, AnalysisFilter classFilter) {
+    public void analyze(GraphTransaction tx, AnalysisFilter classFilter) {
         StopWatch stopWatch = StopWatch.createStarted();
         LOG.debug("Start processing jar {}", jarPath);
         try (JarFile jarFile = new JarFile(jarPath.toFile())) {
@@ -48,7 +48,7 @@ public class JarTypeHierarchyAnalyzer {
                 JarEntry entry = entries.nextElement();
                 if (entry.getName().endsWith(".class")) {
                     ClassHierarchyAnalyzer classHierarchyAnalyzer = new ClassHierarchyAnalyzer(currentNode, tx, classFilter);
-                    classHierarchyAnalyzer.start(jarFile, entry);
+                    classHierarchyAnalyzer.analyze(jarFile, entry);
                 }
             }
             LOG.debug("Done processing jar {}: Processed in {} ms", jarPath.getFileName(), stopWatch.getTime(TimeUnit.MILLISECONDS));

@@ -42,6 +42,6 @@ public class ClassCallGraphAnalyzer extends ClassAnalyzer {
             return null;
         }
         MethodNode methodNode = new MethodNode(api, access, name, descriptor, signature, exceptions);
-        return new MethodCallGraphAnalyzer(api, super.visitMethod(access, name, descriptor, signature, exceptions), currentNode, methodNode, activeTransaction, classFilter);
+        return new MethodCallGraphCreator(api, super.visitMethod(access, name, descriptor, signature, exceptions), currentNode, methodNode, activeTransaction, classFilter);
     }
 }

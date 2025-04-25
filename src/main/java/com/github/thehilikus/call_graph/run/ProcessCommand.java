@@ -1,10 +1,9 @@
 package com.github.thehilikus.call_graph.run;
 
 import com.github.thehilikus.call_graph.analysis.AnalysisFilter;
-import com.github.thehilikus.call_graph.analysis.call_graph.DynamicBindingsAnalyzer;
+import com.github.thehilikus.call_graph.analysis.call_graph.CallGraphCreator;
+import com.github.thehilikus.call_graph.analysis.type_hierarchy.TypeHierarchyCreator;
 import com.github.thehilikus.call_graph.db.GraphDatabase;
-import com.github.thehilikus.call_graph.analysis.call_graph.JarCallGraphAnalyzer;
-import com.github.thehilikus.call_graph.analysis.type_hierarchy.JarTypeHierarchyAnalyzer;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +47,13 @@ public class ProcessCommand implements Runnable {
                 LOG.warn("Running in dry-run mode. Changes won't be committed to the database");
             }
 
-            createTypeHierarchyGraph(graphTransaction);
-            createCallGraph(graphTransaction);
+            AnalysisFilter analysisFilter = new AnalysisFilter(includePackages, excludePackages);
+
+            TypeHierarchyCreator typeHierarchyCreator = new TypeHierarchyCreator(jarPaths, analysisFilter);
+            typeHierarchyCreator.run(graphTransaction);
+
+            CallGraphCreator callGraphCreator = new CallGraphCreator(jarPaths, analysisFilter);
+            callGraphCreator.run(graphTransaction);
 
             if (!dryRun) {
                 graphTransaction.commit();
@@ -72,23 +76,5 @@ public class ProcessCommand implements Runnable {
         db.initialize();
 
         return db;
-    }
-
-    private void createTypeHierarchyGraph(GraphTransaction transaction) {
-        LOG.info("Creating type hierarchy graph");
-        for (Path jarPath : jarPaths) {
-            JarTypeHierarchyAnalyzer jarTypeHierarchyAnalyzer = new JarTypeHierarchyAnalyzer(jarPath);
-            jarTypeHierarchyAnalyzer.start(transaction, new AnalysisFilter(includePackages, excludePackages));
-        }
-    }
-
-    private void createCallGraph(GraphTransaction transaction) {
-        LOG.info("Creating call graph");
-        for (Path jarPath : jarPaths) {
-            JarCallGraphAnalyzer jarCallGraphAnalyzer = new JarCallGraphAnalyzer(jarPath);
-            jarCallGraphAnalyzer.start(transaction, new AnalysisFilter(includePackages, excludePackages));
-        }
-        DynamicBindingsAnalyzer dynamicBindingsAnalyzer = new DynamicBindingsAnalyzer(transaction);
-        dynamicBindingsAnalyzer.start();
     }
 }
