@@ -59,7 +59,7 @@ public class JarTypeHierarchyAnalyzer {
     private Node createJarNode(GraphTransaction activeTransaction) {
         String jarName = jarPath.getFileName().toString();
         Map<String, Object> properties = Map.of(
-                GraphConstants.ID, jarName
+                GraphConstants.FQN, jarName
         );
         LOG.debug("Creating jar node for {}", jarName);
         return activeTransaction.addNode(GraphConstants.Jars.JAR_LABEL, properties);

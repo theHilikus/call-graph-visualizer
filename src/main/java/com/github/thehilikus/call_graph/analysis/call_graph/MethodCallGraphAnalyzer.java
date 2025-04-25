@@ -47,13 +47,13 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
      */
     @Override
     public void visitCode() {
-        String className = classNode.getProperty(GraphConstants.ID).toString();
+        String className = classNode.getProperty(GraphConstants.FQN).toString();
         String signature = cleanMethodName(className, methodName) + buildArgumentsList(descriptor);
         String nodeId = className + "#" + signature;
         currentNode = createOrGetExistingMethodNode(nodeId);
         addMethodNodeProperties(currentNode, nodeId, accessFlags);
 
-        LOG.trace("Creating relationship '{}' between {} and {}", Relations.CONTAINS, classNode.getProperty(GraphConstants.ID), currentNode.getProperty(GraphConstants.ID));
+        LOG.trace("Creating relationship '{}' between {} and {}", Relations.CONTAINS, classNode.getProperty(GraphConstants.FQN), currentNode.getProperty(GraphConstants.FQN));
         activeTransaction.addRelationship(Relations.CONTAINS, classNode, currentNode);
 
         super.visitCode();
@@ -85,7 +85,7 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
         Node result = activeTransaction.getNode(Methods.METHOD_LABEL, nodeId);
         if (result == null) {
             LOG.trace("Creating method node for {}", nodeId);
-            result = activeTransaction.addNode(Methods.METHOD_LABEL, Map.of(GraphConstants.ID, nodeId));
+            result = activeTransaction.addNode(Methods.METHOD_LABEL, Map.of(GraphConstants.FQN, nodeId));
         }
 
         return result;
@@ -101,7 +101,7 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
     private Relationship createOrGetExistingRelationship(Node currentNode, Node targetNode) {
         Relationship result = activeTransaction.getRelationship(Relations.CALLS, currentNode, targetNode);
         if (result == null) {
-            LOG.trace("Creating relationship '{}' between {} and {}", Relations.CALLS, currentNode.getProperty(GraphConstants.ID), targetNode.getProperty(GraphConstants.ID));
+            LOG.trace("Creating relationship '{}' between {} and {}", Relations.CALLS, currentNode.getProperty(GraphConstants.FQN), targetNode.getProperty(GraphConstants.FQN));
 
             result = activeTransaction.addRelationship(Relations.CALLS, currentNode, targetNode);
         }

@@ -35,7 +35,7 @@ public class ClassHierarchyAnalyzer extends ClassAnalyzer {
         if (classFilter.isClassIncluded(className)) {
             Node currentNode = createOrGetExistingClassNode(className);
 
-            LOG.trace("Creating relationship '{}' between {} and {}", GraphConstants.Relations.ARCHIVES, jarNode.getProperty(GraphConstants.ID), currentNode.getProperty(GraphConstants.ID));
+            LOG.trace("Creating relationship '{}' between {} and {}", GraphConstants.Relations.ARCHIVES, jarNode.getProperty(GraphConstants.FQN), currentNode.getProperty(GraphConstants.FQN));
             activeTransaction.addRelationship(GraphConstants.Relations.ARCHIVES, jarNode, currentNode); //jar to class
 
             processSuperType(superName, currentNode);
@@ -51,7 +51,7 @@ public class ClassHierarchyAnalyzer extends ClassAnalyzer {
         Node result = activeTransaction.getNode(GraphConstants.Classes.CLASS_LABEL, className);
         if (result == null) {
             Map<String, Object> properties = Map.of(
-                    GraphConstants.ID, className,
+                    GraphConstants.FQN, className,
                     GraphConstants.Classes.SIMPLE_NAME, className.substring(className.lastIndexOf('.') + 1)
             );
             LOG.debug("Creating class node for {}", className);
@@ -65,7 +65,7 @@ public class ClassHierarchyAnalyzer extends ClassAnalyzer {
         String superClassName = superName.replace("/", ".");
         if (classFilter.isClassIncluded(superClassName)) {
             Node superClassNode = createOrGetExistingClassNode(superClassName);
-            LOG.trace("Creating relationship '{}' between {} and {}", GraphConstants.Relations.SUBTYPE, currentNode.getProperty(GraphConstants.ID), superClassNode.getProperty(GraphConstants.ID));
+            LOG.trace("Creating relationship '{}' between {} and {}", GraphConstants.Relations.SUBTYPE, currentNode.getProperty(GraphConstants.FQN), superClassNode.getProperty(GraphConstants.FQN));
             activeTransaction.addRelationship(GraphConstants.Relations.SUBTYPE, currentNode, superClassNode);
         }
     }
