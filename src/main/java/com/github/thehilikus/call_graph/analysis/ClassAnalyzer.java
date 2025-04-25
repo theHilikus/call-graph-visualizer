@@ -23,7 +23,7 @@ public abstract class ClassAnalyzer extends ClassVisitor {
      * @param jarFile the jar file containing the class
      * @param entry   the specific jar entry representing the class file
      */
-    public void start(JarFile jarFile, JarEntry entry) {
+    public void analyze(JarFile jarFile, JarEntry entry) {
         try (InputStream inputStream = jarFile.getInputStream(entry)) {
             ClassReader classReader = new ClassReader(inputStream);
             classReader.accept(this, 0);

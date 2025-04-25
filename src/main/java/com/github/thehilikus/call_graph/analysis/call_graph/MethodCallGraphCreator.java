@@ -20,14 +20,14 @@ import java.util.Map;
 /**
  * POJO to navigate method relationships
  */
-public class MethodCallGraphAnalyzer extends MethodVisitor {
-    private static final Logger LOG = LoggerFactory.getLogger(MethodCallGraphAnalyzer.class);
+public class MethodCallGraphCreator extends MethodVisitor {
+    private static final Logger LOG = LoggerFactory.getLogger(MethodCallGraphCreator.class);
     private static final String CONSTRUCTOR_NAME = "<init>";
     private final GraphTransaction activeTransaction;
     private final AnalysisFilter classFilter;
     private final Node currentMethodNode;
 
-    protected MethodCallGraphAnalyzer(int api, MethodVisitor methodVisitor, Node classNode, MethodNode methodNode, GraphTransaction tx, AnalysisFilter classFilter) {
+    protected MethodCallGraphCreator(int api, MethodVisitor methodVisitor, Node classNode, MethodNode methodNode, GraphTransaction tx, AnalysisFilter classFilter) {
         super(api, methodVisitor);
         this.activeTransaction = tx;
         this.classFilter = classFilter;
