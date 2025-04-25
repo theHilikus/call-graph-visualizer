@@ -14,6 +14,7 @@ public class TestMain {
     private void start() {
         sameJar();
         acrossJars();
+        moreCalls();
     }
 
     private void sameJar() {
@@ -36,5 +37,11 @@ public class TestMain {
         CoreInterface coreInterface = new CoreInterfaceImpl();
         coreInterface.interfaceMethod();
         coreInterface.defaultMethod();
+    }
+
+    private void moreCalls() {
+        System.out.println("=========");
+        CoreClassChild child = new CoreClassChild();
+        child.regularParentMethod();
     }
 }
