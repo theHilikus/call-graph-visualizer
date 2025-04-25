@@ -1,11 +1,10 @@
 package com.github.thehilikus.call_graph.analysis.type_hierarchy;
 
+import com.github.thehilikus.call_graph.analysis.AnalysisFilter;
+import com.github.thehilikus.call_graph.analysis.JarAnalysisException;
 import com.github.thehilikus.call_graph.db.GraphConstants;
 import com.github.thehilikus.call_graph.db.GraphConstants.Jars;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
-import com.github.thehilikus.call_graph.analysis.JarAnalysisException;
-import com.github.thehilikus.call_graph.analysis.AnalysisFilter;
-import org.apache.commons.lang3.time.StopWatch;
 import org.neo4j.graphdb.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -39,7 +37,6 @@ public class JarTypeHierarchyAnalyzer {
     }
 
     public void analyze(GraphTransaction tx, AnalysisFilter classFilter) {
-        StopWatch stopWatch = StopWatch.createStarted();
         LOG.debug("Start processing jar {}", jarPath);
         try (JarFile jarFile = new JarFile(jarPath.toFile())) {
             Node currentNode = createJarNode(tx);
@@ -51,7 +48,6 @@ public class JarTypeHierarchyAnalyzer {
                     classHierarchyAnalyzer.analyze(jarFile, entry);
                 }
             }
-            LOG.debug("Done processing jar {}: Processed in {} ms", jarPath.getFileName(), stopWatch.getTime(TimeUnit.MILLISECONDS));
         } catch (IOException e) {
             throw new JarAnalysisException("Error processing jar file: " + jarPath, e);
         }

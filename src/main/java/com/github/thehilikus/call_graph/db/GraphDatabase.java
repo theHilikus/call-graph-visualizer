@@ -1,7 +1,7 @@
 package com.github.thehilikus.call_graph.db;
 
+import com.github.thehilikus.call_graph.run.PerfTracker;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.time.StopWatch;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.connectors.HttpConnector;
@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -43,7 +42,7 @@ public class GraphDatabase {
 
     public void initialize() {
         LOG.info("Initializing Neo4j database '{}' at {}", databaseName, directory);
-        StopWatch stopWatch = StopWatch.createStarted();
+        PerfTracker perfTracker = PerfTracker.createStarted("Neo4j database initialization");
         Neo4jDatabaseManagementServiceBuilder serviceBuilder = new DatabaseManagementServiceBuilder(directory.resolve(databaseName));
         if (boltPort != -1) {
             LOG.info("Enabling Bolt and HTTP connectors in ports {} and {}", boltPort, httpPort);
@@ -54,9 +53,7 @@ public class GraphDatabase {
         }
         managementService = serviceBuilder.build();
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Neo4j database '{}' initialized in {} ms", databaseName, stopWatch.getTime(TimeUnit.MILLISECONDS));
-        }
+        perfTracker.finish();
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
     }
