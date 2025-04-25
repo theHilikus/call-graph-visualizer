@@ -1,6 +1,7 @@
 package com.github.thehilikus.call_graph.analysis.type_hierarchy;
 
 import com.github.thehilikus.call_graph.db.GraphConstants;
+import com.github.thehilikus.call_graph.db.GraphConstants.Jars;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
 import com.github.thehilikus.call_graph.analysis.JarAnalysisException;
 import com.github.thehilikus.call_graph.analysis.AnalysisFilter;
@@ -62,6 +63,6 @@ public class JarTypeHierarchyAnalyzer {
                 GraphConstants.FQN, jarName
         );
         LOG.debug("Creating jar node for {}", jarName);
-        return activeTransaction.addNode(GraphConstants.Jars.JAR_LABEL, properties);
+        return activeTransaction.addNode(Jars.JAR_LABEL, properties);
     }
 }

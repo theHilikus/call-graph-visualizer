@@ -1,6 +1,9 @@
 package com.github.thehilikus.call_graph.analysis.call_graph;
 
 import com.github.thehilikus.call_graph.db.GraphConstants;
+import com.github.thehilikus.call_graph.db.GraphConstants.Classes;
+import com.github.thehilikus.call_graph.db.GraphConstants.Methods;
+import com.github.thehilikus.call_graph.db.GraphConstants.Relations;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
@@ -28,15 +31,15 @@ public class DynamicBindingsAnalyzer {
 
     public void start() {
         LOG.info("Start analyzing dynamic binding");
-        try (Stream<Relationship> allDynamicCalls = activeTransaction.getAllRelationshipsWithProperty(GraphConstants.Relations.CALLS, GraphConstants.Relations.DYNAMIC, true)) {
+        try (Stream<Relationship> allDynamicCalls = activeTransaction.getAllRelationshipsWithProperty(Relations.CALLS, Relations.DYNAMIC, true)) {
             allDynamicCalls.forEach(dynamicCall -> {
                 Collection<Node> newCalls = processDynamicCalls(dynamicCall.getEndNode());
                 newCalls.forEach(newCall -> {
-                    LOG.trace("Creating dynamic relationship '{}' between {} and {}", GraphConstants.Relations.CALLS, dynamicCall.getStartNode().getProperty(GraphConstants.FQN), newCall.getProperty(GraphConstants.FQN));
-                    Relationship dynamicBindingRelation = activeTransaction.addRelationship(GraphConstants.Relations.CALLS, dynamicCall.getStartNode(), newCall);
-                    dynamicBindingRelation.setProperty(GraphConstants.Relations.DYNAMIC, true);
-                    int currentCount = (int) dynamicBindingRelation.getProperty(GraphConstants.Relations.COUNT, 0);
-                    dynamicBindingRelation.setProperty(GraphConstants.Relations.COUNT, currentCount + 1);
+                    LOG.trace("Creating dynamic relationship '{}' between {} and {}", Relations.CALLS, dynamicCall.getStartNode().getProperty(GraphConstants.FQN), newCall.getProperty(GraphConstants.FQN));
+                    Relationship dynamicBindingRelation = activeTransaction.addRelationship(Relations.CALLS, dynamicCall.getStartNode(), newCall);
+                    dynamicBindingRelation.setProperty(Relations.DYNAMIC, true);
+                    int currentCount = (int) dynamicBindingRelation.getProperty(Relations.COUNT, 0);
+                    dynamicBindingRelation.setProperty(Relations.COUNT, currentCount + 1);
                 });
 
             });
@@ -45,14 +48,14 @@ public class DynamicBindingsAnalyzer {
 
     @Nonnull
     private Collection<Node> processDynamicCalls(Node targetMethodNode) {
-        Optional<Relationship> contains = targetMethodNode.getRelationships(Direction.INCOMING, RelationshipType.withName(GraphConstants.Relations.CONTAINS)).stream().findFirst();
+        Optional<Relationship> contains = targetMethodNode.getRelationships(Direction.INCOMING, RelationshipType.withName(Relations.CONTAINS)).stream().findFirst();
         Collection<Node> result;
         if (contains.isPresent()) {
-            String targetMethodName = targetMethodNode.getProperty(GraphConstants.Methods.SIGNATURE).toString();
+            String targetMethodName = targetMethodNode.getProperty(Methods.SIGNATURE).toString();
             Node targetClassNode = contains.get().getStartNode();
             result = findOverrides(targetMethodName, targetClassNode);
-            if (!result.isEmpty() && (boolean) targetMethodNode.getProperty(GraphConstants.Methods.ABSTRACT, false)) {
-                targetMethodNode.getRelationships(Direction.INCOMING, RelationshipType.withName(GraphConstants.Relations.CALLS)).forEach(Relationship::delete);
+            if (!result.isEmpty() && (boolean) targetMethodNode.getProperty(Methods.ABSTRACT, false)) {
+                targetMethodNode.getRelationships(Direction.INCOMING, RelationshipType.withName(Relations.CALLS)).forEach(Relationship::delete);
             }
         } else {
             //pointing to method that is not contained by any class. This is caused by calls to parent methods via children references
@@ -64,11 +67,11 @@ public class DynamicBindingsAnalyzer {
 
     private Collection<Node> findOverrides(String targetMethodName, Node targetClassNode) {
         Collection<Node> result = new ArrayList<>();
-        for (Relationship typeRelation : targetClassNode.getRelationships(RelationshipType.withName(GraphConstants.Relations.SUBTYPE))) {
+        for (Relationship typeRelation : targetClassNode.getRelationships(RelationshipType.withName(Relations.SUBTYPE))) {
             Node subOrSuperTypeNode = typeRelation.getOtherNode(targetClassNode);
             String relatedClassName = subOrSuperTypeNode.getProperty(GraphConstants.FQN).toString();
             String relatedMethodId = relatedClassName + "#" + targetMethodName;
-            Node relatedMethodNode = activeTransaction.getNode(GraphConstants.Methods.METHOD_LABEL, relatedMethodId);
+            Node relatedMethodNode = activeTransaction.getNode(Methods.METHOD_LABEL, relatedMethodId);
             if (relatedMethodNode != null) {
                 result.add(relatedMethodNode);
             }
@@ -81,13 +84,13 @@ public class DynamicBindingsAnalyzer {
         String targetMethodFullyQualifiedName = targetMethodNode.getProperty(GraphConstants.FQN).toString();
         String targetMethodClass = targetMethodFullyQualifiedName.substring(0, targetMethodFullyQualifiedName.lastIndexOf('#'));
         String targetMethodName = targetMethodFullyQualifiedName.substring(targetMethodFullyQualifiedName.lastIndexOf('#') + 1);
-        Node methodClassNode = activeTransaction.getNode(GraphConstants.Classes.CLASS_LABEL, targetMethodClass);
+        Node methodClassNode = activeTransaction.getNode(Classes.CLASS_LABEL, targetMethodClass);
 
         Collection<Node> result = new ArrayList<>();
-        Node parentClass = methodClassNode.getSingleRelationship(RelationshipType.withName(GraphConstants.Relations.SUBTYPE), Direction.OUTGOING).getEndNode();
+        Node parentClass = methodClassNode.getSingleRelationship(RelationshipType.withName(Relations.SUBTYPE), Direction.OUTGOING).getEndNode();
         while (parentClass != null) {
             String parentMethodId = parentClass.getProperty(GraphConstants.FQN) + "#" + targetMethodName;
-            Node parentMethodNode = activeTransaction.getNode(GraphConstants.Methods.METHOD_LABEL, parentMethodId);
+            Node parentMethodNode = activeTransaction.getNode(Methods.METHOD_LABEL, parentMethodId);
             if (parentMethodNode != null) {
                 result.add(parentMethodNode);
                 LOG.debug("Replacing overridden call {} that doesn't contain the method. Proper containing class is {}", targetMethodFullyQualifiedName, parentClass.getProperty(GraphConstants.FQN));
@@ -95,7 +98,7 @@ public class DynamicBindingsAnalyzer {
                 targetMethodNode.delete();
                 break;
             }
-            parentClass = parentClass.getSingleRelationship(RelationshipType.withName(GraphConstants.Relations.SUBTYPE), Direction.OUTGOING).getEndNode();
+            parentClass = parentClass.getSingleRelationship(RelationshipType.withName(Relations.SUBTYPE), Direction.OUTGOING).getEndNode();
         }
 
         return result;

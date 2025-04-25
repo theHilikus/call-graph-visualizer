@@ -2,6 +2,8 @@ package com.github.thehilikus.call_graph.analysis.type_hierarchy;
 
 import com.github.thehilikus.call_graph.analysis.ClassAnalyzer;
 import com.github.thehilikus.call_graph.db.GraphConstants;
+import com.github.thehilikus.call_graph.db.GraphConstants.Classes;
+import com.github.thehilikus.call_graph.db.GraphConstants.Relations;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
 import com.github.thehilikus.call_graph.analysis.AnalysisFilter;
 import org.neo4j.graphdb.Node;
@@ -35,8 +37,8 @@ public class ClassHierarchyAnalyzer extends ClassAnalyzer {
         if (classFilter.isClassIncluded(className)) {
             Node currentNode = createOrGetExistingClassNode(className);
 
-            LOG.trace("Creating relationship '{}' between {} and {}", GraphConstants.Relations.ARCHIVES, jarNode.getProperty(GraphConstants.FQN), currentNode.getProperty(GraphConstants.FQN));
-            activeTransaction.addRelationship(GraphConstants.Relations.ARCHIVES, jarNode, currentNode); //jar to class
+            LOG.trace("Creating relationship '{}' between {} and {}", Relations.ARCHIVES, jarNode.getProperty(GraphConstants.FQN), currentNode.getProperty(GraphConstants.FQN));
+            activeTransaction.addRelationship(Relations.ARCHIVES, jarNode, currentNode); //jar to class
 
             processSuperType(superName, currentNode);
             for (String interfaceName : interfaces) {
@@ -48,14 +50,14 @@ public class ClassHierarchyAnalyzer extends ClassAnalyzer {
     }
 
     private Node createOrGetExistingClassNode(String className) {
-        Node result = activeTransaction.getNode(GraphConstants.Classes.CLASS_LABEL, className);
+        Node result = activeTransaction.getNode(Classes.CLASS_LABEL, className);
         if (result == null) {
             Map<String, Object> properties = Map.of(
                     GraphConstants.FQN, className,
-                    GraphConstants.Classes.SIMPLE_NAME, className.substring(className.lastIndexOf('.') + 1)
+                    Classes.SIMPLE_NAME, className.substring(className.lastIndexOf('.') + 1)
             );
             LOG.debug("Creating class node for {}", className);
-            result = activeTransaction.addNode(GraphConstants.Classes.CLASS_LABEL, properties);
+            result = activeTransaction.addNode(Classes.CLASS_LABEL, properties);
         }
 
         return result;
@@ -65,8 +67,8 @@ public class ClassHierarchyAnalyzer extends ClassAnalyzer {
         String superClassName = superName.replace("/", ".");
         if (classFilter.isClassIncluded(superClassName)) {
             Node superClassNode = createOrGetExistingClassNode(superClassName);
-            LOG.trace("Creating relationship '{}' between {} and {}", GraphConstants.Relations.SUBTYPE, currentNode.getProperty(GraphConstants.FQN), superClassNode.getProperty(GraphConstants.FQN));
-            activeTransaction.addRelationship(GraphConstants.Relations.SUBTYPE, currentNode, superClassNode);
+            LOG.trace("Creating relationship '{}' between {} and {}", Relations.SUBTYPE, currentNode.getProperty(GraphConstants.FQN), superClassNode.getProperty(GraphConstants.FQN));
+            activeTransaction.addRelationship(Relations.SUBTYPE, currentNode, superClassNode);
         }
     }
 }
