@@ -1,11 +1,10 @@
 package com.github.thehilikus.call_graph.analysis.call_graph;
 
-import com.github.thehilikus.call_graph.analysis.JarAnalysisException;
+import com.github.thehilikus.call_graph.analysis.AnalysisFilter;
 import com.github.thehilikus.call_graph.db.GraphConstants;
 import com.github.thehilikus.call_graph.db.GraphConstants.Methods;
 import com.github.thehilikus.call_graph.db.GraphConstants.Relations;
 import com.github.thehilikus.call_graph.db.GraphTransaction;
-import com.github.thehilikus.call_graph.analysis.AnalysisFilter;
 import org.neo4j.graphdb.Entity;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
@@ -26,35 +25,21 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
     private static final String CONSTRUCTOR_NAME = "<init>";
     private final GraphTransaction activeTransaction;
     private final AnalysisFilter classFilter;
-    private final String nodeId;
-    private final int accessFlags;
-    private final Node classNode;
-    private Node currentMethodNode;
+    private final Node currentMethodNode;
 
     protected MethodCallGraphAnalyzer(int api, MethodVisitor methodVisitor, Node classNode, MethodNode methodNode, GraphTransaction tx, AnalysisFilter classFilter) {
         super(api, methodVisitor);
-        this.classNode = classNode;
-        String className = classNode.getProperty(GraphConstants.FQN).toString();
-        String methodSignature = cleanMethodName(className, methodNode.name) + buildArgumentsList(methodNode.desc);
-        this.nodeId = className + "#" + methodSignature;
-        this.accessFlags = methodNode.access;
         this.activeTransaction = tx;
         this.classFilter = classFilter;
-    }
 
-    /**
-     * Called once for the current method
-     */
-    @Override
-    public void visitCode() {
         String className = classNode.getProperty(GraphConstants.FQN).toString();
+        String methodSignature = cleanMethodName(className, methodNode.name) + buildArgumentsList(methodNode.desc);
+        String nodeId = className + "#" + methodSignature;
         currentMethodNode = createOrGetExistingMethodNode(nodeId);
-        addMethodNodeProperties(currentMethodNode, nodeId, accessFlags);
+        addMethodNodeProperties(currentMethodNode, nodeId, methodNode.access);
 
         LOG.trace("Creating relationship '{}' between {} and {}", Relations.CONTAINS, className, currentMethodNode.getProperty(GraphConstants.FQN));
         activeTransaction.addRelationship(Relations.CONTAINS, classNode, currentMethodNode);
-
-        super.visitCode();
     }
 
     /**
@@ -63,14 +48,14 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
     @Override
     public void visitMethodInsn(int opcode, String targetClassRaw, String targetMethodNameRaw, String descriptor, boolean isInterface) {
         if (currentMethodNode == null) {
-            throw new JarAnalysisException("Unknown current method with target method" + targetClassRaw + "#" + targetMethodNameRaw);
+            throw new CallGraphException("Unknown current method with target method" + targetClassRaw + "#" + targetMethodNameRaw);
         }
         String targetClass = targetClassRaw.replace("/", ".");
         if (classFilter.isClassIncluded(targetClass)) {
             String targetMethod = cleanMethodName(targetClass, targetMethodNameRaw) + buildArgumentsList(descriptor);
-            String nodeId = targetClass + "#" + targetMethod;
-            Node targetNode = createOrGetExistingMethodNode(nodeId);
-            addMethodNodeProperties(targetNode, nodeId, opcode);
+            String targetNodeId = targetClass + "#" + targetMethod;
+            Node targetNode = createOrGetExistingMethodNode(targetNodeId);
+            addMethodNodeProperties(targetNode, targetNodeId, opcode);
 
             Relationship relationship = createOrGetExistingRelationship(currentMethodNode, targetNode);
             addRelationshipProperties(relationship, opcode);
