@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.CheckForNull;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * POJO to represent a transaction in the database
@@ -66,6 +67,11 @@ public class GraphTransaction implements AutoCloseable {
         }
 
         return null;
+    }
+
+    public Stream<Relationship> getAllRelationshipsWithProperty(String relationshipType, String propertyName, Object propertyValue) {
+        Result relationshipResults = neoTx.execute("MATCH (n)-[r:" + relationshipType + "]->(m) WHERE r." + propertyName + " = " + propertyValue + " RETURN r");
+        return relationshipResults.stream().map(result -> (Relationship) result.get("r"));
     }
 
     private long getNodeCount() {

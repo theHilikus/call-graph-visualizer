@@ -1,6 +1,7 @@
 package com.github.thehilikus.call_graph.run;
 
 import com.github.thehilikus.call_graph.analysis.AnalysisFilter;
+import com.github.thehilikus.call_graph.analysis.call_graph.DynamicBindingsAnalyzer;
 import com.github.thehilikus.call_graph.db.GraphDatabase;
 import com.github.thehilikus.call_graph.analysis.call_graph.JarCallGraphAnalyzer;
 import com.github.thehilikus.call_graph.analysis.type_hierarchy.JarTypeHierarchyAnalyzer;
@@ -87,5 +88,7 @@ public class ProcessCommand implements Runnable {
             JarCallGraphAnalyzer jarCallGraphAnalyzer = new JarCallGraphAnalyzer(jarPath);
             jarCallGraphAnalyzer.start(transaction, new AnalysisFilter(includePackages, excludePackages));
         }
+        DynamicBindingsAnalyzer dynamicBindingsAnalyzer = new DynamicBindingsAnalyzer(transaction);
+        dynamicBindingsAnalyzer.start();
     }
 }
