@@ -109,8 +109,10 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
         return result;
     }
 
-    private void addRelationshipProperties(Relationship relationship, int methodAccessFlags) {
-        boolean isDynamic = (methodAccessFlags & Opcodes.INVOKEVIRTUAL) != 0 || (methodAccessFlags & Opcodes.INVOKESPECIAL) != 0 || (methodAccessFlags & Opcodes.INVOKEINTERFACE) != 0;
+    private void addRelationshipProperties(Relationship relationship, int opcode) {
+        boolean isDynamic = opcode == Opcodes.INVOKEVIRTUAL
+                || opcode == Opcodes.INVOKEINTERFACE
+                || opcode == Opcodes.INVOKEDYNAMIC;
         relationship.setProperty(Relations.DYNAMIC, isDynamic);
         int currentCount = (int) relationship.getProperty(Relations.COUNT, 0);
         relationship.setProperty(Relations.COUNT, currentCount + 1);
