@@ -1,9 +1,8 @@
 package com.github.thehilikus.call_graph.test.core;
 
 public class CoreClassParent {
-    public int regularMethod() {
+    public final void regularParentMethod() {
         System.out.println("[parent] regularMethod");
-        return 1;
     }
 
     public void override() {

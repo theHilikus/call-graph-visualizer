@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.CheckForNull;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * POJO to represent a transaction in the database
@@ -32,21 +33,21 @@ public class GraphTransaction implements AutoCloseable {
         }
     }
 
-    public Node getNode(String label, String nodeId) {
-        return neoTx.findNode(Label.label(label), GraphConstants.ID, nodeId);
+    public Node getNode(String label, String nodeFullyQualifiedName) {
+        return neoTx.findNode(Label.label(label), GraphConstants.FQN, nodeFullyQualifiedName);
     }
 
     public void commit() {
         throwIfNoTransaction();
 
-        LOG.info("Committing DB transaction");
+        LOG.info("Committing DB transaction with {} nodes", getNodeCount());
         neoTx.commit();
     }
 
     public void rollback() {
         throwIfNoTransaction();
 
-        LOG.info("Rolling back DB transaction");
+        LOG.info("Rolling back DB transaction with {} nodes", getNodeCount());
         neoTx.rollback();
     }
 
@@ -68,7 +69,12 @@ public class GraphTransaction implements AutoCloseable {
         return null;
     }
 
-    public long getNodeCount() {
+    public Stream<Relationship> getAllRelationshipsWithProperty(String relationshipType, String propertyName, Object propertyValue) {
+        Result relationshipResults = neoTx.execute("MATCH (n)-[r:" + relationshipType + "]->(m) WHERE r." + propertyName + " = " + propertyValue + " RETURN r");
+        return relationshipResults.stream().map(result -> (Relationship) result.get("r"));
+    }
+
+    private long getNodeCount() {
         throwIfNoTransaction();
         return (long) neoTx.execute("MATCH (n) RETURN count(n) as count").next().get("count");
     }
