@@ -26,17 +26,17 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
     private static final String CONSTRUCTOR_NAME = "<init>";
     private final GraphTransaction activeTransaction;
     private final AnalysisFilter classFilter;
-    private final String descriptor;
-    private final String methodName;
+    private final String nodeId;
     private final int accessFlags;
     private final Node classNode;
-    private Node currentNode;
+    private Node currentMethodNode;
 
     protected MethodCallGraphAnalyzer(int api, MethodVisitor methodVisitor, Node classNode, MethodNode methodNode, GraphTransaction tx, AnalysisFilter classFilter) {
         super(api, methodVisitor);
         this.classNode = classNode;
-        this.methodName = methodNode.name;
-        this.descriptor = methodNode.desc;
+        String className = classNode.getProperty(GraphConstants.FQN).toString();
+        String methodSignature = cleanMethodName(className, methodNode.name) + buildArgumentsList(methodNode.desc);
+        this.nodeId = className + "#" + methodSignature;
         this.accessFlags = methodNode.access;
         this.activeTransaction = tx;
         this.classFilter = classFilter;
@@ -48,13 +48,11 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
     @Override
     public void visitCode() {
         String className = classNode.getProperty(GraphConstants.FQN).toString();
-        String signature = cleanMethodName(className, methodName) + buildArgumentsList(descriptor);
-        String nodeId = className + "#" + signature;
-        currentNode = createOrGetExistingMethodNode(nodeId);
-        addMethodNodeProperties(currentNode, nodeId, accessFlags);
+        currentMethodNode = createOrGetExistingMethodNode(nodeId);
+        addMethodNodeProperties(currentMethodNode, nodeId, accessFlags);
 
-        LOG.trace("Creating relationship '{}' between {} and {}", Relations.CONTAINS, classNode.getProperty(GraphConstants.FQN), currentNode.getProperty(GraphConstants.FQN));
-        activeTransaction.addRelationship(Relations.CONTAINS, classNode, currentNode);
+        LOG.trace("Creating relationship '{}' between {} and {}", Relations.CONTAINS, className, currentMethodNode.getProperty(GraphConstants.FQN));
+        activeTransaction.addRelationship(Relations.CONTAINS, classNode, currentMethodNode);
 
         super.visitCode();
     }
@@ -64,7 +62,7 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
      */
     @Override
     public void visitMethodInsn(int opcode, String targetClassRaw, String targetMethodNameRaw, String descriptor, boolean isInterface) {
-        if (currentNode == null) {
+        if (currentMethodNode == null) {
             throw new JarAnalysisException("Unknown current method with target method" + targetClassRaw + "#" + targetMethodNameRaw);
         }
         String targetClass = targetClassRaw.replace("/", ".");
@@ -74,7 +72,7 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
             Node targetNode = createOrGetExistingMethodNode(nodeId);
             addMethodNodeProperties(targetNode, nodeId, opcode);
 
-            Relationship relationship = createOrGetExistingRelationship(currentNode, targetNode);
+            Relationship relationship = createOrGetExistingRelationship(currentMethodNode, targetNode);
             addRelationshipProperties(relationship, opcode);
         }
 
@@ -91,7 +89,7 @@ public class MethodCallGraphAnalyzer extends MethodVisitor {
         return result;
     }
 
-    private void addMethodNodeProperties(Entity methodNode, String nodeId, int opcode) {
+    private static void addMethodNodeProperties(Entity methodNode, String nodeId, int opcode) {
         boolean isStatic = (opcode & Opcodes.ACC_STATIC) != 0;
         String signature = nodeId.substring(nodeId.lastIndexOf('#') + 1);
         methodNode.setProperty(Methods.STATIC, isStatic);
