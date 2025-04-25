@@ -37,7 +37,7 @@ public class JarTypeHierarchyAnalyzer {
         this.jarPath = jarPath;
     }
 
-    public void process(GraphTransaction tx, AnalysisFilter classFilter) {
+    public void start(GraphTransaction tx, AnalysisFilter classFilter) {
         StopWatch stopWatch = StopWatch.createStarted();
         LOG.debug("Start processing jar {}", jarPath);
         try (JarFile jarFile = new JarFile(jarPath.toFile())) {

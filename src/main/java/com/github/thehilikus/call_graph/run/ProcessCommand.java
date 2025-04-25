@@ -77,7 +77,7 @@ public class ProcessCommand implements Runnable {
         LOG.info("Creating type hierarchy graph");
         for (Path jarPath : jarPaths) {
             JarTypeHierarchyAnalyzer jarTypeHierarchyAnalyzer = new JarTypeHierarchyAnalyzer(jarPath);
-            jarTypeHierarchyAnalyzer.process(transaction, new AnalysisFilter(includePackages, excludePackages));
+            jarTypeHierarchyAnalyzer.start(transaction, new AnalysisFilter(includePackages, excludePackages));
         }
     }
 
@@ -85,7 +85,7 @@ public class ProcessCommand implements Runnable {
         LOG.info("Creating call graph");
         for (Path jarPath : jarPaths) {
             JarCallGraphAnalyzer jarCallGraphAnalyzer = new JarCallGraphAnalyzer(jarPath);
-            jarCallGraphAnalyzer.process(transaction, new AnalysisFilter(includePackages, excludePackages));
+            jarCallGraphAnalyzer.start(transaction, new AnalysisFilter(includePackages, excludePackages));
         }
     }
 }
