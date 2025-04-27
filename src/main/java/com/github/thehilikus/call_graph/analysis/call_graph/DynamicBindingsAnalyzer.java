@@ -89,7 +89,7 @@ public class DynamicBindingsAnalyzer {
         String targetMethodName = targetMethodFullyQualifiedName.substring(targetMethodFullyQualifiedName.lastIndexOf('#') + 1);
         Node methodClassNode = activeTransaction.getNode(Classes.CLASS_LABEL, targetMethodClass);
         Collection<Node> result = new ArrayList<>();
-        if (methodClassNode != null) {
+        if (methodClassNode != null && methodClassNode.hasRelationship(Direction.OUTGOING, RelationshipType.withName(Relations.SUBTYPE))) {
             //call done to parent method via child reference
             Node parentClass = methodClassNode.getSingleRelationship(RelationshipType.withName(Relations.SUBTYPE), Direction.OUTGOING).getEndNode();
             while (parentClass != null) {
