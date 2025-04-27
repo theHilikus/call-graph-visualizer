@@ -33,6 +33,11 @@ public class ClassHierarchyAnalyzer extends ClassAnalyzer {
 
     @Override
     public void visit(int version, int access, String name, String signature, @Nonnull String superName, @Nonnull String[] interfaces) {
+        if ((access & Opcodes.ACC_MODULE) != 0) {
+            //module descriptor, skip it
+            return;
+        }
+
         String className = name.replace("/", ".");
         if (classFilter.isClassIncluded(className)) {
             Node currentNode = createOrGetExistingClassNode(className);
