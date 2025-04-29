@@ -23,6 +23,7 @@ import java.util.Map;
 public class MethodCallGraphCreator extends MethodVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(MethodCallGraphCreator.class);
     private static final String CONSTRUCTOR_NAME = "<init>";
+    private static final String STATIC_INITIALIZER = "<cinit>";
     private final GraphTransaction activeTransaction;
     private final AnalysisFilter classFilter;
     private final Node currentMethodNode;
@@ -107,6 +108,8 @@ public class MethodCallGraphCreator extends MethodVisitor {
         String result = rawMethodName;
         if (CONSTRUCTOR_NAME.equals(rawMethodName)) {
             result = className.substring(className.lastIndexOf('.') + 1);
+        } else if (STATIC_INITIALIZER.equals(rawMethodName)) {
+            result = "<staticInitializer>";
         }
         return result;
     }
