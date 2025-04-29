@@ -102,7 +102,14 @@ public class DynamicBindingsAnalyzer {
                     targetMethodNode.delete();
                     break;
                 }
-                parentClass = parentClass.getSingleRelationship(RelationshipType.withName(Relations.SUBTYPE), Direction.OUTGOING).getEndNode();
+                Relationship nextParentRelationship = parentClass.getSingleRelationship(RelationshipType.withName(Relations.SUBTYPE), Direction.OUTGOING);
+                if (nextParentRelationship != null) {
+                    parentClass = nextParentRelationship.getEndNode();
+                } else {
+                    //call to external parent method
+                    parentClass = null;
+                    targetMethodNode.setProperty(Methods.EXTERNAL, true);
+                }
             }
         } else {
             //call done to external library method
