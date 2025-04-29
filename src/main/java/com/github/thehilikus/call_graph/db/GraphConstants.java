@@ -21,6 +21,7 @@ public class GraphConstants {
         public static final String SIGNATURE = "signature";
         public static final String STATIC = "static";
         public static final String ABSTRACT = "abstract";
+        public static final String EXTERNAL = "external";
     }
 
     public static class Relations {

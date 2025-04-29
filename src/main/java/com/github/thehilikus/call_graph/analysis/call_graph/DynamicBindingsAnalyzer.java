@@ -35,7 +35,7 @@ public class DynamicBindingsAnalyzer {
         PerfTracker perfTracker = PerfTracker.createStarted("Dynamic binding analysis");
         try (Stream<Relationship> allDynamicCalls = activeTransaction.getAllRelationshipsWithProperty(Relations.CALLS, Relations.DYNAMIC, true)) {
             allDynamicCalls.forEach(dynamicCall -> {
-                Collection<Node> newCalls = processDynamicCalls(dynamicCall.getEndNode());
+                Collection<Node> newCalls = processDynamicCall(dynamicCall.getEndNode());
                 newCalls.forEach(newCall -> {
                     LOG.trace("Creating dynamic relationship '{}' between {} and {}", Relations.CALLS, dynamicCall.getStartNode().getProperty(GraphConstants.FQN), newCall.getProperty(GraphConstants.FQN));
                     Relationship dynamicBindingRelation = activeTransaction.addRelationship(Relations.CALLS, dynamicCall.getStartNode(), newCall);
@@ -50,7 +50,7 @@ public class DynamicBindingsAnalyzer {
     }
 
     @Nonnull
-    private Collection<Node> processDynamicCalls(Node targetMethodNode) {
+    private Collection<Node> processDynamicCall(Node targetMethodNode) {
         Optional<Relationship> contains = targetMethodNode.getRelationships(Direction.INCOMING, RelationshipType.withName(Relations.CONTAINS)).stream().findFirst();
         Collection<Node> result;
         if (contains.isPresent()) {
@@ -61,8 +61,8 @@ public class DynamicBindingsAnalyzer {
                 targetMethodNode.getRelationships(Direction.INCOMING, RelationshipType.withName(Relations.CALLS)).forEach(Relationship::delete);
             }
         } else {
-            //pointing to method that is not contained by any class. This is caused by calls to parent methods via children references
-            result = fixCallsDoneToParentMethodsViaChildren(targetMethodNode);
+            //pointing to method that is not contained by any class. This is caused by calls to parent methods via children references or to external libraries
+            result = fixCallDoneToMethodWithoutClassParent(targetMethodNode);
         }
 
         return result;
@@ -83,25 +83,37 @@ public class DynamicBindingsAnalyzer {
         return result;
     }
 
-    private Collection<Node> fixCallsDoneToParentMethodsViaChildren(Node targetMethodNode) {
+    private Collection<Node> fixCallDoneToMethodWithoutClassParent(Node targetMethodNode) {
         String targetMethodFullyQualifiedName = targetMethodNode.getProperty(GraphConstants.FQN).toString();
         String targetMethodClass = targetMethodFullyQualifiedName.substring(0, targetMethodFullyQualifiedName.lastIndexOf('#'));
         String targetMethodName = targetMethodFullyQualifiedName.substring(targetMethodFullyQualifiedName.lastIndexOf('#') + 1);
         Node methodClassNode = activeTransaction.getNode(Classes.CLASS_LABEL, targetMethodClass);
-
         Collection<Node> result = new ArrayList<>();
-        Node parentClass = methodClassNode.getSingleRelationship(RelationshipType.withName(Relations.SUBTYPE), Direction.OUTGOING).getEndNode();
-        while (parentClass != null) {
-            String parentMethodId = parentClass.getProperty(GraphConstants.FQN) + "#" + targetMethodName;
-            Node parentMethodNode = activeTransaction.getNode(Methods.METHOD_LABEL, parentMethodId);
-            if (parentMethodNode != null) {
-                result.add(parentMethodNode);
-                LOG.debug("Replacing overridden call {} that doesn't contain the method. Proper containing class is {}", targetMethodFullyQualifiedName, parentClass.getProperty(GraphConstants.FQN));
-                targetMethodNode.getRelationships().forEach(Relationship::delete);
-                targetMethodNode.delete();
-                break;
+        if (methodClassNode != null && methodClassNode.hasRelationship(Direction.OUTGOING, RelationshipType.withName(Relations.SUBTYPE))) {
+            //call done to parent method via child reference
+            Node parentClass = methodClassNode.getSingleRelationship(RelationshipType.withName(Relations.SUBTYPE), Direction.OUTGOING).getEndNode();
+            while (parentClass != null) {
+                String parentMethodId = parentClass.getProperty(GraphConstants.FQN) + "#" + targetMethodName;
+                Node parentMethodNode = activeTransaction.getNode(Methods.METHOD_LABEL, parentMethodId);
+                if (parentMethodNode != null) {
+                    result.add(parentMethodNode);
+                    LOG.debug("Replacing overridden call {} that doesn't contain the method. Proper containing class is {}", targetMethodFullyQualifiedName, parentClass.getProperty(GraphConstants.FQN));
+                    targetMethodNode.getRelationships().forEach(Relationship::delete);
+                    targetMethodNode.delete();
+                    break;
+                }
+                Relationship nextParentRelationship = parentClass.getSingleRelationship(RelationshipType.withName(Relations.SUBTYPE), Direction.OUTGOING);
+                if (nextParentRelationship != null) {
+                    parentClass = nextParentRelationship.getEndNode();
+                } else {
+                    //call to external parent method
+                    parentClass = null;
+                    targetMethodNode.setProperty(Methods.EXTERNAL, true);
+                }
             }
-            parentClass = parentClass.getSingleRelationship(RelationshipType.withName(Relations.SUBTYPE), Direction.OUTGOING).getEndNode();
+        } else {
+            //call done to external library method
+            targetMethodNode.setProperty(Methods.EXTERNAL, true);
         }
 
         return result;
