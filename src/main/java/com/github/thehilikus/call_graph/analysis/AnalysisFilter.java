@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -20,12 +22,14 @@ public final class AnalysisFilter {
     private final Set<String> exclude;
 
     /**
-     * @param include Collection of classes to include. If null, include everything
-     * @param exclude Collection of classes to exclude
+     * @param include      Collection of packages/classes to include. If null, include everything
+     * @param exclude      Collection of packages/classes to exclude
+     * @param excludeExtra Extra packages/classes to exclude
      */
-    public AnalysisFilter(@Nullable Set<String> include, @Nonnull Set<String> exclude) {
+    public AnalysisFilter(@Nullable Set<String> include, @Nonnull Set<String> exclude, @Nonnull Collection<String> excludeExtra) {
         this.include = include;
-        this.exclude = exclude;
+        this.exclude = new HashSet<>(exclude);
+        this.exclude.addAll(excludeExtra);
     }
 
     @Override

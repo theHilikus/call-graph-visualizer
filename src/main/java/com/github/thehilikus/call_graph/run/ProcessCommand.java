@@ -30,11 +30,14 @@ public class ProcessCommand implements Runnable {
     @Option(names="--truncate", description = "Deletes the existing database before creating a new one")
     private boolean truncate = false;
 
-    @Option(names ="--include-packages", description = "Comma separated list of packages to include. If omitted, include everything")
-    private Set<String> includePackages = null;
+    @Option(names ="--include", description = "Comma separated list of packages/classes to include. If omitted, include everything")
+    private Set<String> include = null;
 
-    @Option(names ="--exclude-packages", description = "Comma separated list of packages to exclude. If omitted, exclude JDK classes")
-    private Set<String> excludePackages = Set.of("java.", "javax.", "sun.", "com.sun.", "jdk.", "org.w3c.dom.", "org.xml.sax.");
+    @Option(names ="--exclude", description = "Comma separated list of packages/classes to exclude. If omitted, exclude JDK classes")
+    private Set<String> exclude = Set.of("java.", "javax.", "sun.", "com.sun.", "jdk.", "org.w3c.dom.", "org.xml.sax.");
+
+    @Option(names ="--exclude-extra", description = "Comma separated list of packages/classes to exclude on top of the default excludes")
+    private Set<String> excludeExtra = Set.of();
 
     @ParentCommand
     private Main main;
@@ -48,7 +51,7 @@ public class ProcessCommand implements Runnable {
                 LOG.warn("Running in dry-run mode. Changes won't be committed to the database");
             }
 
-            AnalysisFilter analysisFilter = new AnalysisFilter(includePackages, excludePackages);
+            AnalysisFilter analysisFilter = new AnalysisFilter(include, exclude, excludeExtra);
 
             TypeHierarchyCreator typeHierarchyCreator = new TypeHierarchyCreator(jarPaths, analysisFilter);
             typeHierarchyCreator.run(graphTransaction);
