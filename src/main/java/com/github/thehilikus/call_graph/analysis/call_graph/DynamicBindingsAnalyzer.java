@@ -35,7 +35,7 @@ public class DynamicBindingsAnalyzer {
         PerfTracker perfTracker = PerfTracker.createStarted("Dynamic binding analysis");
         try (Stream<Relationship> allDynamicCalls = activeTransaction.getAllRelationshipsWithProperty(Relations.CALLS, Relations.DYNAMIC, true)) {
             allDynamicCalls.forEach(dynamicCall -> {
-                Collection<Node> newCalls = processDynamicCall(dynamicCall.getEndNode());
+                Collection<Node> newCalls = processDynamicCall(dynamicCall);
                 newCalls.forEach(newCall -> {
                     LOG.trace("Creating dynamic relationship '{}' between {} and {}", Relations.CALLS, dynamicCall.getStartNode().getProperty(GraphConstants.FQN), newCall.getProperty(GraphConstants.FQN));
                     Relationship dynamicBindingRelation = activeTransaction.addRelationship(Relations.CALLS, dynamicCall.getStartNode(), newCall);
@@ -50,7 +50,8 @@ public class DynamicBindingsAnalyzer {
     }
 
     @Nonnull
-    private Collection<Node> processDynamicCall(Node targetMethodNode) {
+    private Collection<Node> processDynamicCall(Relationship dynamicCall) {
+        Node targetMethodNode = dynamicCall.getEndNode();
         Optional<Relationship> contains = targetMethodNode.getRelationships(Direction.INCOMING, RelationshipType.withName(Relations.CONTAINS)).stream().findFirst();
         Collection<Node> result;
         if (contains.isPresent()) {
@@ -58,7 +59,11 @@ public class DynamicBindingsAnalyzer {
             Node targetClassNode = contains.get().getStartNode();
             result = findOverrides(targetMethodName, targetClassNode);
             if (!result.isEmpty() && (boolean) targetMethodNode.getProperty(Methods.ABSTRACT, false)) {
-                targetMethodNode.getRelationships(Direction.INCOMING, RelationshipType.withName(Relations.CALLS)).forEach(Relationship::delete);
+                targetMethodNode.getRelationships(Direction.INCOMING, RelationshipType.withName(Relations.CALLS)).stream().filter(rel -> rel.getStartNode().equals(dynamicCall.getStartNode())).forEach(relationship -> {
+                            LOG.trace("Deleting relationship '{}' between {} and {}", Relations.CALLS, relationship.getStartNode().getProperty(GraphConstants.FQN), relationship.getEndNode().getProperty(GraphConstants.FQN));
+                            relationship.delete();
+                        }
+                );
             }
         } else {
             //pointing to method that is not contained by any class. This is caused by calls to parent methods via children references or to external libraries

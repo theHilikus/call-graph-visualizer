@@ -43,5 +43,7 @@ public class TestMain {
         System.out.println("=========");
         CoreClassChild child = new CoreClassChild();
         child.regularParentMethod();
+        CoreInterface coreInterface = new CoreInterfaceImpl();
+        coreInterface.interfaceMethod();
     }
 }
